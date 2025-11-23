@@ -1,0 +1,520 @@
+/*
+ |--------------------------------------------------------------------------
+ | TailwindCSS Directives
+ |--------------------------------------------------------------------------
+ |
+ | Import TailwindCSS directives and swipe out at build-time with all of
+ | the styles it generates based on your configured design system.
+ |
+ | Please check this link for more details:
+ | https://tailwindcss.com/docs/installation#include-tailwind-in-your-css
+ |
+ */
+@import "./_tailwind.css";
+
+/*
+   |--------------------------------------------------------------------------
+   | Colors
+   |--------------------------------------------------------------------------
+   |
+   | Import all fonts used in the template, the font configuration can be
+   | seen in "tailwind.config.js".
+   |
+   | Please check this link for more details:
+   | https://tailwindcss.com/docs/theme
+   |
+   */
+@import "./_colors.css";
+
+/*
+   |--------------------------------------------------------------------------
+   | Fonts
+   |--------------------------------------------------------------------------
+   |
+   | Import all fonts used in the template, the font configuration can be
+   | seen in "tailwind.config.js".
+   |
+   | Please check this link for more details:
+   | https://tailwindcss.com/docs/theme
+   |
+   */
+@import "./fonts/_roboto.css";
+
+/*
+   |--------------------------------------------------------------------------
+   | Mixins
+   |--------------------------------------------------------------------------
+   |
+   | Import helper mixins.
+   |
+   */
+@import "@left4code/tw-starter/dist/css/mixins/_media.css";
+
+/*
+   |--------------------------------------------------------------------------
+   | 3rd Party Libraries
+   |--------------------------------------------------------------------------
+   |
+   | Import 3rd party library CSS/SASS files.
+   |
+   */
+@import "@left4code/tw-starter/dist/css/_breadcrumb.css";
+@import "@left4code/tw-starter/dist/css/_accordion.css";
+@import "@left4code/tw-starter/dist/css/_alert.css";
+@import "@left4code/tw-starter/dist/css/_btn.css";
+@import "@left4code/tw-starter/dist/css/_dropdown.css";
+@import "@left4code/tw-starter/dist/css/_file.css";
+@import "@left4code/tw-starter/dist/css/_form-reset.css";
+@import "@left4code/tw-starter/dist/css/_form-check.css";
+@import "@left4code/tw-starter/dist/css/_form-control.css";
+@import "@left4code/tw-starter/dist/css/_form-help.css";
+@import "@left4code/tw-starter/dist/css/_form-inline.css";
+@import "@left4code/tw-starter/dist/css/_form-label.css";
+@import "@left4code/tw-starter/dist/css/_form-select.css";
+@import "@left4code/tw-starter/dist/css/_image-fit.css";
+@import "@left4code/tw-starter/dist/css/_input-group.css";
+@import "@left4code/tw-starter/dist/css/_intro.css";
+@import "@left4code/tw-starter/dist/css/_modal.css";
+@import "@left4code/tw-starter/dist/css/_pagination.css";
+@import "@left4code/tw-starter/dist/css/_progress.css";
+@import "@left4code/tw-starter/dist/css/_scrollbar.css";
+@import "@left4code/tw-starter/dist/css/_tab.css";
+@import "@left4code/tw-starter/dist/css/_table.css";
+@import "@left4code/tw-starter/dist/css/_typing-dots.css";
+@import "@left4code/tw-starter/dist/css/_zoom-in.css";
+@import "@left4code/tw-starter/dist/css/_box.css";
+@import "highlight.js/styles/github.css";
+@import "tippy.js/dist/tippy.css";
+@import "tippy.js/themes/light.css";
+@import "tippy.js/dist/svg-arrow.css";
+@import "tippy.js/animations/shift-away.css";
+@import "toastify-js/src/toastify.css";
+@import "dropzone/dist/dropzone.css";
+@import "zoom-vanilla.js/dist/zoom.css";
+@import "tabulator-tables/dist/css/tabulator.css";
+@import "tom-select/dist/css/tom-select.css";
+@import "tiny-slider/dist/tiny-slider.css";
+@import "simplebar/src/simplebar.css";
+
+/*
+ |--------------------------------------------------------------------------
+ | Components
+ |--------------------------------------------------------------------------
+ |
+ | Import CSS/SCSS components.
+ |
+ */
+@import "./components/_global.css";
+@import "./components/_login.css";
+@import "./components/_table-report.css";
+@import "./components/_report-chart.css";
+@import "./components/_search.css";
+@import "./components/_notification.css";
+@import "./components/_report-box.css";
+@import "./components/_report-box-2.css";
+@import "./components/_report-box-3.css";
+@import "./components/_report-box-4.css";
+@import "./components/_content.css";
+@import "./components/_top-nav.css";
+@import "./components/_side-nav.css";
+@import "./components/_breadcrumb.css";
+@import "./components/_toastify.css";
+@import "./components/_toastify-content.css";
+@import "./components/_lucide-icon.css";
+@import "./components/_top-bar-boxed.css";
+@import "./components/_mobile-menu.css";
+@import "./components/_inbox-filter.css";
+@import "./components/_inbox.css";
+@import "./components/_chat.css";
+@import "./components/_chat-dropdown.css";
+@import "./components/_news.css";
+@import "./components/_pricing-tabs.css";
+@import "./components/_error-page.css";
+@import "./components/_search-result.css";
+@import "./components/_notification-content.css";
+@import "./components/_report-maps.css";
+@import "./components/_pos-dropdown.css";
+@import "./components/_post.css";
+@import "./components/_litepicker.css";
+@import "./components/_tiny-slider.css";
+@import "./components/_tippy.css";
+@import "./components/_tabulator.css";
+@import "./components/_tom-select.css";
+@import "./components/_dropzone.css";
+@import "./components/_ckeditor.css";
+@import "./components/_zoom-vanilla.css";
+@import "./components/_dark-mode-switcher.css";
+@import "./components/_hljs.css";
+@import "./components/_source-preview.css";
+@import "./components/_full-calendar.css";
+@import "./components/_pristine.css";
+
+/* Hide scrollbar while keeping scrolling functionality */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+/* Hide the spinner for WebKit browsers */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+::-webkit-scrollbar {
+  width: 10px; /* Width of the vertical scrollbar */
+  height: 10px; /* Height of the horizontal scrollbar */
+  border-radius: 20px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05); /* Color of the track */
+  border-radius: 20px;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #f79256; /* Color of the scroll thumb */
+  border-radius: 20px; /* Radius for the scroll thumb */
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #b6b6b6; /* Color of the scroll thumb on hover*/
+}
+
+::-ms-reveal {
+  display: none;
+}
+
+
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&display=swap');
+*/
+
+
+
+:root {
+  --button-color: #56AEFB;
+  --body-bg-color: #EEF0F6;
+  --bg-black: #000000;
+  --main-color: #FF1ABF;
+
+  --light-color-text: #D7BCFD;
+  --light-text-color: #71717A;
+  --white-text: #fff;
+
+  --input-bg: rgba(128, 152, 249, 0.50);
+
+  --small-font-size: 12px;
+}
+
+h1, h2, h3, h4, h5 {
+	/* font-family: "Cardo", serif; */
+}
+.logo_admin {
+	font-family: "Cardo", serif;
+}
+/* body {
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: var(--body-bg-color);
+} */
+
+.custom_input {
+	background: var(--input-bg);
+	border-radius: 6px;
+	padding: 18px 15px;
+	outline:none;
+	color: var(--light-color-text);
+	font-size: 12px;
+	padding-left: 50px;
+}
+.input_otp {
+	background: var(--input-bg);
+	border-radius: 6px;
+	padding: 10px;
+	outline:none;
+	text-align: center;
+	font-size: 30px;
+	text-transform: uppercase;
+	width: 25%;
+	color: var(--light-color-text);
+	font-weight: bold;
+}
+.icon_input {
+	position: absolute;
+	left: 14px;
+	top: 20px;
+}
+
+.button_main {
+	background: var(--button-color);
+	height: 44px;
+	min-width: 133px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 50px;
+	font-family: var(--heading-font);
+	font-size: 14px !important;
+	text-transform: uppercase;
+}
+.button_main:hover {
+	background: #202020;
+}
+
+.form-control {
+	border: 1px solid #ededed;
+	padding: 15px 20px;
+	border-radius: 10px;
+	width: 100%;
+	outline: none;
+  font-size: 12px;
+}
+.box_white {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+
+.btn_black {
+	background: #000000;
+	border-radius: 50px;
+	text-align: center;
+	padding: 10px 20px;
+	color: white;
+	min-width: 130px;
+}
+.btn_black_big {
+	background: #000000;
+	border-radius: 50px;
+	text-align: center;
+	padding: 18px 20px;
+	color: white;
+	min-width: 200px;
+	font-size: 13px;
+	width: 100%;
+}
+.btn_black_big_white {
+	background: #ffffff;
+	border-radius: 50px;
+	text-align: center;
+	padding: 15px 20px;
+	color: black;
+	min-width: 200px;
+	font-size: 13px;
+	width: 100%;
+}
+
+.btn_big_white {
+	background: transparent;
+	border-radius: 50px;
+	border: 1.5px solid #000000;
+	text-align: center;
+	padding: 15px 20px;
+	color: black;
+	min-width: 200px;
+	font-size: 13px;
+	width: 100%;
+}
+
+.btn_big_white:hover {
+	background: #000000;
+	border-radius: 50px;
+	border: 1.5px solid #000000;
+	text-align: center;
+	padding: 15px 20px;
+	color: white;
+	min-width: 200px;
+	font-size: 13px;
+	width: 100%;
+}
+
+.btn_black:hover, .btn_black_big:hover {
+	background: var(--main-color);
+}
+.custom_link a:hover {
+	color: var(--main-color);
+}
+
+.left_nav_bar a {
+	font-size: 14px;
+	color: #4F4F4F;
+	gap:20px
+}
+.left_nav_bar a.active {
+	/* color: var(--button-color); */
+	color: black;
+	font-weight: 600;
+}
+.left_nav_bar a.active  svg path{
+	/* fill: var(--button-color); */
+	fill: #000000;
+}
+.left_nav_bar a:hover {
+	/* color: var(--button-color); */
+	font-weight: 600;
+	fill: #000000;
+}
+.left_nav_bar a:hover svg path{
+	fill: #000000 !important;
+	/* stroke:  var(--button-color); */
+}
+
+.heading_main_dashboard {
+	font-size: 30px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.cards_patroness {
+	background: #ffffff;
+	padding: 30px 30px;
+	border-radius: 15px;
+}
+
+.cards_patroness p {
+	margin-bottom: 20px;
+	font-size: 13px;
+}
+.cards_patroness p:last-child {
+	margin-bottom: 0 !important;
+}
+
+.input_field_rounder {
+	border-radius: 50px;
+	padding: 15px 20px;
+	width: 100%;
+	background: #EEF0F6;
+	font-size: 13px;
+	outline: none;
+}
+.input_field_normal {
+	border-radius: 10px;
+	padding: 15px 20px;
+	width: 100%;
+	background: #EEF0F6;
+	font-size: 13px;
+	outline: none;
+}
+
+.checkbox_questions label {
+	width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+	margin-bottom: 10px;
+}
+
+.custom_card_profile_matches {
+	background: #ffffff;
+	padding: 20px 30px;
+	border-radius: 15px;
+	border-top: 5px solid #C09AF2;
+	border-bottom: 5px solid #C09AF2;
+}
+
+.arrow_placement {
+	/* position: absolute;
+	right: 0;
+	top: 0; */
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap:5px;
+	margin-bottom: 10px;
+}
+
+.custom-pagination-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.swiper-pagination-bullet {
+	background-color: #b6b6b6 !important;
+	width: 16px !important;
+	height: 16px !important;
+	margin-left: 10px !important;
+}
+.swiper-pagination-bullet-active {
+	background-color: #D7BCFD !important;
+	height: 20px !important;
+	width: 20px !important;
+}
+
+input, select, textarea {
+	font-size: 13px !important;
+}
+
+.custom_black_button {
+	background: #202020;
+	color: white;
+	padding: 13px 20px;
+	min-width: 150px;
+	border-radius: 100px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+.custom_black_button:hover {
+	background: #aa6aff;
+}
+.custom_black_button svg {
+	width: 22px;
+}
+.custom_black_button span {
+	display: inline-block
+}
+
+.star-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+}
+
+.star {
+  cursor: pointer;
+  color: lightgray;
+  transition: color 0.2s;
+}
+
+.star.filled {
+  color: gold;
+}
+
+.rating-value {
+  font-size: 16px;
+  margin-left: 10px;
+  color: #333;
+}
+
+
+.top-bar-boxed:after {
+	background: #f3f3f3 !important;
+}
+.breadcrumb-item, .breadcrumb .active {
+	color: black !important;
+}
+
+.custom_black_button_small {
+	background: #202020;
+	color: white;
+	padding: 8px 15px;
+	min-width: 100px;
+	border-radius: 100px;
+	font-weight: 400;
+	font-size: 12px;
+	text-transform: capitalize;
+}
+.custom_black_button_small:hover {
+	background: #aa6aff;
+}
