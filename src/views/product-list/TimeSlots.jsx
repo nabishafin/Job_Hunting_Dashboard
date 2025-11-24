@@ -7,10 +7,17 @@ import { TIME_SLOTS } from "../../constants";
 import { selectAccessToken } from "../../stores/userSlice";
 import httpRequest from "../../axios";
 import useUnauthenticate from "../../hooks/handle-unauthenticated";
+import { useGetAllTimeslotsQuery, useDeleteTimeslotMutation } from "../../redux/features/timeslot/timeslotApi";
 
 function TimeSlots() {
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(false); // Changed to false for dummy data
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { data: slotsData, isLoading, isError, error } = useGetAllTimeslotsQuery({
+    page,
+    limit,
+  });
+  const [deleteTimeslot, { isLoading: isDeleting }] = useDeleteTimeslotMutation();
+
   const [deleteId, setDeleteId] = useState(null);
   const [deleteModal, setDeleteModal] = useState(false);
 
@@ -18,69 +25,36 @@ function TimeSlots() {
   const navigate = useNavigate();
   const unauthenticate = useUnauthenticate();
 
-  // Dummy time slots data
-  const dummyTimeSlots = [
-    { _id: "1", name: "08:00 AM - 10:00 AM", price: 25, type: "Morning" },
-    { _id: "2", name: "10:00 AM - 12:00 PM", price: 20, type: "Morning" },
-    { _id: "3", name: "12:00 PM - 02:00 PM", price: 30, type: "Afternoon" },
-    { _id: "4", name: "02:00 PM - 04:00 PM", price: 25, type: "Afternoon" },
-    { _id: "5", name: "04:00 PM - 06:00 PM", price: 35, type: "Evening" },
-    { _id: "6", name: "06:00 PM - 08:00 PM", price: 40, type: "Evening" },
-    { _id: "7", name: "08:00 PM - 10:00 PM", price: 45, type: "Night" },
-    { _id: "8", name: "09:00 AM - 11:00 AM", price: 22, type: "Morning" },
-    { _id: "9", name: "01:00 PM - 03:00 PM", price: 28, type: "Afternoon" },
-    { _id: "10", name: "05:00 PM - 07:00 PM", price: 38, type: "Evening" },
-  ];
+  const slots = slotsData?.data || [];
+  const meta = slotsData?.meta || {};
+  const totalPage = meta.totalPage || 1;
 
-  // Commented out API call - using dummy data
-  // const fetchSlots = async () => {
-  //   try {
-  //     const response = await httpRequest.get(TIME_SLOTS, {
-  //       headers: {
-  //         Authorization: `Bearer ${accessToken}`,
-  //       },
-  //     });
-  //     setSlots(response?.data || []);
-  //   } catch (error) {
-  //     if (error?.response?.status === 401) unauthenticate();
-  //     toast.error("Failed to fetch time slots");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  useEffect(() => {
-    // fetchSlots();
-    setSlots(dummyTimeSlots);
-  }, []);
-
-  // Commented out API call - dummy functionality
-  // const handleDelete = async (id) => {
-  //   try {
-  //     const response = await httpRequest.delete(`${TIME_SLOTS}/${id}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${accessToken}`,
-  //       },
-  //     });
-  //     if (response.status === 200) {
-  //       toast.success("Time slot deleted successfully");
-  //       fetchSlots();
-  //     }
-  //   } catch (error) {
-  //     toast.error("Failed to delete time slot");
-  //   } finally {
-  //     setDeleteModal(false);
-  //   }
-  // };
-
-  const handleDelete = (id) => {
-    const updatedSlots = slots.filter(slot => slot._id !== id);
-    setSlots(updatedSlots);
-    toast.success("Time slot deleted successfully (dummy mode)");
-    setDeleteModal(false);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPage) {
+      setPage(newPage);
+    }
   };
 
-  if (loading) {
+  useEffect(() => {
+    if (isError && error) {
+      toast.error("Failed to fetch time slots");
+      if (error?.status === 401) {
+        unauthenticate();
+      }
+    }
+  }, [isError, error]);
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteTimeslot(id).unwrap();
+      toast.success("Time slot deleted successfully");
+      setDeleteModal(false);
+    } catch (error) {
+      toast.error("Failed to delete time slot");
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <LoadingIcon icon="tail-spin" className="w-16 h-16" />
@@ -115,8 +89,8 @@ function TimeSlots() {
             <tbody>
               {slots.map((slot, index) => (
                 <tr key={slot._id} className="intro-x">
-                  <td className="text-left">{index + 1}</td>
-                  <td className="text-left">{slot.name}</td>
+                  <td className="text-left">{(page - 1) * limit + index + 1}</td>
+                  <td className="text-left">{slot.startTime} - {slot.endTime}</td>
                   <td className="text-left">€{slot.price || "-"}</td>
                   <td className="text-left">{slot.type || "-"}</td>
                   <td className="text-center">
@@ -147,6 +121,51 @@ function TimeSlots() {
         </div>
       ) : (
         <div className="text-center text-gray-500 mt-10">No time slots found.</div>
+      )}
+
+      {/* Pagination Controls */}
+      {slots?.length > 0 && (
+        <div className="flex justify-between items-center mt-4 px-4">
+          <div className="text-sm text-slate-500">
+            Showing {(page - 1) * limit + 1} to{" "}
+            {Math.min(page * limit, meta.total || 0)} of{" "}
+            {meta.total || 0} entries
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+              className={`px-3 py-1 rounded ${page === 1
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-primary text-white hover:bg-primary-dark"
+                }`}
+            >
+              Previous
+            </button>
+            {[...Array(totalPage)].map((_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => handlePageChange(index + 1)}
+                className={`px-3 py-1 rounded ${page === index + 1
+                    ? "bg-primary text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPage}
+              className={`px-3 py-1 rounded ${page === totalPage
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-primary text-white hover:bg-primary-dark"
+                }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}

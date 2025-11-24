@@ -9,6 +9,7 @@ import httpRequest from "../../axios";
 import { selectAccessToken } from "../../stores/userSlice";
 import useUnauthenticate from "../../hooks/handle-unauthenticated";
 import { TIME_SLOTS } from "../../constants";
+import { useAddTimeslotMutation, useUpdateTimeslotMutation } from "../../redux/features/timeslot/timeslotApi";
 
 // ... existing imports
 const AddTimeSlot = () => {
@@ -17,12 +18,15 @@ const AddTimeSlot = () => {
   const accessToken = useSelector(selectAccessToken);
   const handleUnAuthenticate = useUnauthenticate();
 
+  const [addTimeslot, { isLoading: isAdding }] = useAddTimeslotMutation();
+  const [updateTimeslot, { isLoading: isUpdating }] = useUpdateTimeslotMutation();
+
   const slotData = location.state?.data || null;
   const isEdit = !!slotData;
 
   const initialValues = {
-    startTime: slotData?.name?.split(" - ")[0] || "",
-    endTime: slotData?.name?.split(" - ")[1] || "",
+    startTime: slotData?.startTime || "",
+    endTime: slotData?.endTime || "",
     price: slotData?.price || "",
     type: slotData?.type || "", // NEW
   };
@@ -39,30 +43,35 @@ const AddTimeSlot = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     const payload = {
-      name: `${values.startTime} - ${values.endTime}`,
-      price: values.price.toString(),
-      type: values.type, // NEW
+      startTime: values.startTime,
+      endTime: values.endTime,
+      price: Number(values.price),
+      type: values.type,
     };
 
-    try {
-      const url = isEdit
-        ? `${TIME_SLOTS}/${slotData._id}`
-        : TIME_SLOTS;
-      const response = await httpRequest.post(url, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+    // Calculate changed fields for update - REVERTED per user request
+    // const changedFields = {};
+    // if (isEdit) {
+    //   Object.keys(payload).forEach((key) => {
+    //     if (payload[key] !== initialValues[key]) {
+    //       changedFields[key] = payload[key];
+    //     }
+    //   });
+    // }
 
-      if (response.status === 200 || response.status === 201) {
-        toast.success("Time slot saved successfully");
-        navigate("/time-slots");
+    try {
+      if (isEdit) {
+        // Send full payload as requested
+        await updateTimeslot({ id: slotData._id, data: payload }).unwrap();
+        toast.success("Time slot updated successfully");
       } else {
-        toast.error("Something went wrong");
+        await addTimeslot(payload).unwrap();
+        toast.success("Time slot added successfully");
       }
+      navigate("/time-slots");
     } catch (error) {
-      toast.error(error?.response?.data?.msg || "Unknown error");
-      if (error?.response?.status === 401) {
+      toast.error(error?.data?.message || "Something went wrong");
+      if (error?.status === 401) {
         handleUnAuthenticate();
       }
     } finally {
@@ -173,9 +182,9 @@ const AddTimeSlot = () => {
               <button
                 type="submit"
                 className="custom_black_button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isAdding || isUpdating}
               >
-                {isSubmitting ? (
+                {isSubmitting || isAdding || isUpdating ? (
                   <LoadingIcon
                     icon="tail-spin"
                     color="white"
