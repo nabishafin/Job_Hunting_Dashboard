@@ -1,79 +1,55 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { LoadingIcon } from "../../base-components";
-import { REGISTER_USER, UPDATE_USER } from "../../constants";
-import httpRequest from "../../axios";
-import { selectAccessToken } from "../../stores/userSlice";
-import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import useUnauthenticate from "../../hooks/handle-unauthenticated";
-import { Lucide } from "../../base-components";
-import useCreateOrEdit from "../../hooks/useCreateOrEdit";
-
+import { usePostSettingsMutation } from "../../redux/features/setting/SettingsApi";
 
 const WebsiteSettings = () => {
-  const handleUnAuthenticate = useUnauthenticate();
-  const accessToken = useSelector(selectAccessToken);
   const location = useLocation();
-  const [isEdit, setIsEdit] = useState(false);
   const [userData, setUserData] = useState({
     phone: "+1 (415) 555-0137",
-    whatsApp: "+1 (415) 555-0199",
-    officeAddress: "500 Market St, San Francisco, CA 94105",
-    emailAddress: "support@example.com",
-    faxNumber: "+1 (415) 555-0142",
+    whatsapp: "+1 (415) 555-0199",
+    officeAdress: "500 Market St, San Francisco, CA 94105",
+    emailAdress: "support@example.com",
+    fax: "+1 (415) 555-0142",
     facebook: "https://www.facebook.com/example",
     instagram: "https://www.instagram.com/example",
-    linkedin: "https://www.linkedin.com/company/example"
+    linkedIn: "https://www.linkedin.com/company/example"
   });
   const navigate = useNavigate();
-  const { submitData } = useCreateOrEdit();
-  const [loading, setLoading] = useState(false);
 
-  // useEffect(() => {
-  //   // Dummy mode: using local state instead of fetching from API
-  //   // getSettings();
-  // }, []);
-
-  const getSettings = async () => {
-    // Dummy mode: no API request; ensure not loading
-    setLoading(false);
-  };
+  const [postSettings, { isLoading }] = usePostSettingsMutation();
 
   const initialValues = {
     phone: userData?.phone || "",
-    whatsApp: userData?.whatsApp || "",
-    officeAddress: userData?.officeAddress || "",
-    emailAddress: userData?.emailAddress || "",
-    faxNumber: userData?.faxNumber || "",
+    whatsapp: userData?.whatsapp || "",
+    officeAdress: userData?.officeAdress || "",
+    emailAdress: userData?.emailAdress || "",
+    fax: userData?.fax || "",
     facebook: userData?.facebook || "",
     instagram: userData?.instagram || "",
-    linkedin: userData?.linkedin || "",
+    linkedIn: userData?.linkedIn || "",
   };
-
-  console.log(initialValues, "aaaa")
-
 
   const validationSchema = Yup.object({
     phone: Yup.string().required("Phone number is required"),
-    // whatsApp: Yup.string().required("WhatsApp number is required"),
-    emailAddress: Yup.string().email("Invalid email").required("Email is required"),
-    // officeAddress: Yup.string().required("Office address is required"),
+    emailAdress: Yup.string().email("Invalid email").required("Email is required"),
   });
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      // Dummy save: simulate network delay and persist in local state
-      await new Promise((res) => setTimeout(res, 500));
+      await postSettings(values).unwrap();
+      toast.success("Settings updated successfully");
       setUserData(values);
-      toast.success("Information updated successfully (dummy)");
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.data?.message || "Failed to update settings");
     } finally {
       setSubmitting(false);
     }
   };
-if (loading) return <p>Loading...</p>;
   return (
     <div className="p-4 flex-1 rounded-lg overflow-hidden">
       <Formik
@@ -109,13 +85,13 @@ if (loading) return <p>Loading...</p>;
                   <p>WhatsApp Number</p>
                   <Field
                     type="text"
-                    name="whatsApp"
+                    name="whatsapp"
                     placeholder="WhatsApp Number"
                     className="w-full p-2 mt-2 border rounded-md"
                     min="0"
                   />
                   <ErrorMessage
-                    name="whatsApp"
+                    name="whatsapp"
                     component="div"
                     className="text-red-600"
                   />
@@ -126,12 +102,12 @@ if (loading) return <p>Loading...</p>;
                 <p>Office Address</p>
                 <Field
                   as="textarea"
-                  name="officeAddress"
+                  name="officeAdress"
                   placeholder="Office Address"
                   className="p-2 mt-1 border rounded-md w-full"
                 />
                 <ErrorMessage
-                  name="officeAddress"
+                  name="officeAdress"
                   component="div"
                   className="text-red-600"
                 />
@@ -141,13 +117,13 @@ if (loading) return <p>Loading...</p>;
                   <p>Email Address</p>
                   <Field
                     type="text"
-                    name="emailAddress"
+                    name="emailAdress"
                     placeholder="Email Address"
                     className="w-full p-2 mt-2 border rounded-md"
                     min="0"
                   />
                   <ErrorMessage
-                    name="emailAddress"
+                    name="emailAdress"
                     component="div"
                     className="text-red-600"
                   />
@@ -156,13 +132,13 @@ if (loading) return <p>Loading...</p>;
                   <p>Fax Number</p>
                   <Field
                     type="text"
-                    name="faxNumber"
+                    name="fax"
                     placeholder="Fax Number"
                     className="w-full p-2 mt-2 border rounded-md"
                     min="0"
                   />
                   <ErrorMessage
-                    name="faxNumber"
+                    name="fax"
                     component="div"
                     className="text-red-600"
                   />
@@ -209,24 +185,24 @@ if (loading) return <p>Loading...</p>;
                 </div>
               </div>
 
-             
+
               <div className="flex justify-end mt-4 gap-4">
                 <div className="w-full">
                   <p>LinkedIn</p>
                   <Field
                     type="url"
-                    name="linkedin"
+                    name="linkedIn"
                     placeholder="LinkedIn"
                     className="w-full p-2 mt-2 border rounded-md"
                     min="0"
                   />
                   <ErrorMessage
-                    name="linkedin"
+                    name="linkedIn"
                     component="div"
                     className="text-red-600"
                   />
                 </div>
-               
+
               </div>
             </div>
             <div className="flex justify-end mt-4">
