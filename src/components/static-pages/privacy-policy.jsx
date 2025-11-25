@@ -1,14 +1,9 @@
-import React, { useState , useEffect } from "react";
+import React, { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { Lucide } from "../../base-components";
-import httpRequest from "../../axios";
-import { useSelector } from "react-redux";
-import { selectAccessToken } from "../../stores/userSlice";
-import { PRIVACY_POLICY } from "../../constants";
-import useUnauthenticate from "../../hooks/handle-unauthenticated";
+import { Lucide, LoadingIcon } from "../../base-components";
 import toast from "react-hot-toast";
-import { LoadingIcon } from "../../base-components";
+import { usePostPrivacyPolicyMutation } from "../../redux/features/termsandprivacy/termsandprivacyApi";
 
 const PrivacyPolicy = () => {
   const [content, setContent] = useState(`<h1>Privacy Policy</h1>
@@ -87,12 +82,9 @@ const PrivacyPolicy = () => {
 <p>For privacy-related questions or requests, contact us at:</p>
 <p>Email: privacy@example.com<br>
 Phone: +1 (415) 555-0100<br>
-Address: 500 Market St, San Francisco, CA 94105</p>`); 
-  const [loading, setLoading] = useState(false); 
-  const [pageLoading, setPageLoading] = useState(false); 
-  const accessToken = useSelector(selectAccessToken);
-  const handleUnAuthenticate = useUnauthenticate();
+Address: 500 Market St, San Francisco, CA 94105</p>`);
 
+  const [postPrivacy, { isLoading }] = usePostPrivacyPolicyMutation();
 
   const modules = {
     toolbar: [
@@ -107,59 +99,20 @@ Address: 500 Market St, San Francisco, CA 94105</p>`);
     ],
   };
 
-
-  // Comment out API calls for dummy data
-  // const getPrivacyPolicy = async () => {
-  //   try {
-  //     const response = await httpRequest.get(PRIVACY_POLICY, {
-  //       headers: {
-  //         Authorization: `Bearer ${accessToken}`,
-  //       },
-  //     });
-
-  //     if (response.status === 200 || response.status === 201) {
-  //       setContent(response.data.content);
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //     if (error?.response?.status === 401) {
-  //       handleUnAuthenticate();
-  //     }
-  //   }finally{
-  //     setPageLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   getPrivacyPolicy();
-  // }, []);
-
-
   const savePrivacyPolicy = async () => {
+    if (!content || content.trim() === '') {
+      toast.error("Content cannot be empty");
+      return;
+    }
+
     try {
-      setLoading(true);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await postPrivacy({ description: content }).unwrap();
       toast.success("Privacy Policy saved successfully");
-      setLoading(false);
     } catch (error) {
-      console.log(error);
-      setLoading(false);
+      console.error(error);
+      toast.error(error?.data?.message || "Failed to save Privacy Policy");
     }
   };
-
-  if (pageLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <LoadingIcon
-          icon="tail-spin"
-          className=""
-          style={{ width: "100px", height: "100px" }} 
-        />
-      </div>
-    );
-  }
-  
 
   return (
     <div className="container mx-auto p-4">
@@ -184,21 +137,20 @@ Address: 500 Market St, San Francisco, CA 94105</p>`);
       />
 
       <div className="pt-10 flex justify-end">
-        <button className="btn btn-primary" onClick={savePrivacyPolicy}>
-          {
-            loading ? (
+        <button
+          className="btn btn-primary"
+          onClick={savePrivacyPolicy}
+          disabled={isLoading}
+        >
+          {isLoading ? (
             <LoadingIcon
               icon="tail-spin"
               color="white"
-              // className="w-4 h-2 ml-2"
             />
-          ) : 
+          ) : (
             "Save"
-
-        }
-          
-          
-          </button>
+          )}
+        </button>
       </div>
     </div>
   );

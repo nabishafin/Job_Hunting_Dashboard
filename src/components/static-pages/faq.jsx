@@ -1,153 +1,98 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { Lucide } from "../../base-components";
-import httpRequest from "../../axios";
+import { Lucide, LoadingIcon, Modal, ModalBody } from "../../base-components";
 import { useSelector } from "react-redux";
 import { selectAccessToken } from "../../stores/userSlice";
-import { FAQS } from "../../constants";
-import useUnauthenticate from "../../hooks/handle-unauthenticated";
 import toast from "react-hot-toast";
-import { LoadingIcon } from "../../base-components";
+import {
+  useGetAllFaqsQuery,
+  useAddFaqMutation,
+  useUpdateFaqMutation,
+  useDeleteFaqMutation,
+} from "../../redux/features/faq/faqApi";
 
 const FAQ = () => {
-  const [faqs, setFaqs] = useState([
-    {
-      _id: "1",
-      question: "How do I track my package?",
-      answer: "<p>You can track your package in real-time using our mobile app or website. Simply enter your tracking number in the tracking section, and you'll see the current location and estimated delivery time of your package.</p>"
-    },
-    {
-      _id: "2",
-      question: "What are your delivery hours?",
-      answer: "<p>We operate 7 days a week from 8:00 AM to 8:00 PM. Same-day delivery is available for orders placed before 2:00 PM in most areas.</p>"
-    },
-    {
-      _id: "3",
-      question: "How much does delivery cost?",
-      answer: "<p>Delivery costs vary based on distance, package size, and delivery speed. Standard delivery starts at $5, while express delivery starts at $10. You can get an exact quote in our app before confirming your order.</p>"
-    },
-    {
-      _id: "4",
-      question: "What if my package is damaged?",
-      answer: "<p>We take great care in handling all packages. If your package arrives damaged, please contact our customer support immediately with photos of the damage. We offer insurance coverage and will process a claim within 24-48 hours.</p>"
-    },
-    {
-      _id: "5",
-      question: "Can I schedule a pickup?",
-      answer: "<p>Yes! You can schedule a pickup through our app or website. Choose your preferred date and time, and one of our couriers will arrive at your location to collect the package.</p>"
-    },
-    {
-      _id: "6",
-      question: "What items cannot be delivered?",
-      answer: "<p>We cannot deliver hazardous materials, illegal substances, perishable food items without proper packaging, live animals, or items exceeding 50kg in weight. Please check our prohibited items list for complete details.</p>"
-    },
-    {
-      _id: "7",
-      question: "How do I become a courier?",
-      answer: "<p>To become a courier, you need to be at least 18 years old, have a valid driver's license, and own a reliable vehicle. Apply through our website's 'Become a Courier' section, and our team will contact you within 2-3 business days.</p>"
-    },
-    {
-      _id: "8",
-      question: "What payment methods do you accept?",
-      answer: "<p>We accept all major credit cards, debit cards, PayPal, and cash on delivery. You can also use our in-app wallet for faster checkout.</p>"
-    }
-  ]);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [editIndex, setEditIndex] = useState(null);
+  const [editIndex, setEditIndex] = useState(null); // Stores the ID of the FAQ being edited
   const [activeIndex, setActiveIndex] = useState(null);
-  const accessToken = useSelector(selectAccessToken);
-  const handleUnAuthenticate = useUnauthenticate();
-  const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Comment out API calls for dummy data
-  // const getFaqs = async () => {
-  //   try {
-  //     const response = await httpRequest.get(FAQS, {
-  //       headers: {
-  //         Authorization: `Bearer ${accessToken}`,
-  //       },
-  //     });
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
-  //     if (response.status === 200 || response.status === 201) {
-  //       setFaqs(response.data);
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //     if (error?.response?.status === 401) {
-  //       handleUnAuthenticate();
-  //     }
-  //   } finally {
-  //     setPageLoading(false);
-  //   }
-  // };
+  const { data: faqsData, isLoading } = useGetAllFaqsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+  });
 
-  // useEffect(() => {
-  //   getFaqs();
-  // }, []);
+  const [addFaq, { isLoading: isAdding }] = useAddFaqMutation();
+  const [updateFaq, { isLoading: isUpdating }] = useUpdateFaqMutation();
+  const [deleteFaq] = useDeleteFaqMutation();
 
-  // Function to add or edit FAQ (Dummy implementation)
   const handleAddOrEditFaq = async () => {
-    const faqData = { question, answer };
-    if (faqData.question === "") {
+    if (!question) {
       toast.error("Question is required");
       return;
     }
-    if (faqData.answer === "") {
+    if (!answer) {
       toast.error("Answer is required");
       return;
     }
 
-    setLoading(true);
+    const payload = { question, answer };
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      if (editIndex !== null) {
+        // Edit FAQ
+        await updateFaq({ id: editIndex, ...payload }).unwrap();
+        toast.success("FAQ updated successfully");
+      } else {
+        // Add new FAQ
+        await addFaq(payload).unwrap();
+        toast.success("FAQ added successfully");
+      }
 
-    if (editIndex !== null) {
-      // Edit FAQ
-      const updatedFaqs = [...faqs];
-      updatedFaqs[editIndex] = { ...updatedFaqs[editIndex], question, answer };
-      setFaqs(updatedFaqs);
-      toast.success("FAQ updated successfully");
+      // Reset form
+      setQuestion("");
+      setAnswer("");
+      setShowForm(false);
       setEditIndex(null);
-    } else {
-      // Add new FAQ
-      const newFaq = {
-        _id: Date.now().toString(),
-        question,
-        answer
-      };
-      setFaqs([...faqs, newFaq]);
-      toast.success("FAQ added successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.data?.message || "Something went wrong");
     }
-    
-    setQuestion("");
-    setAnswer("");
-    setShowForm(false);
-    setEditIndex(null);
-    setLoading(false);
   };
 
-  // Function to handle editing FAQ
-  const handleEditFaq = (index) => {
-    setEditIndex(index);
-    setQuestion(faqs[index].question);
-    setAnswer(faqs[index].answer);
+  const handleEditFaq = (faq) => {
+    setEditIndex(faq._id);
+    setQuestion(faq.question);
+    setAnswer(faq.answer);
+    setShowForm(true);
   };
 
-  // Function to delete FAQ (Dummy implementation)
-  const handleDeleteFaq = (index) => {
-    const updatedFaqs = faqs.filter((_, i) => i !== index);
-    setFaqs(updatedFaqs);
-    toast.success("FAQ deleted successfully");
-    setShowForm(false);
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteFaq(deleteId).unwrap();
+      toast.success("FAQ deleted successfully");
+      setDeleteModal(false);
+      setDeleteId(null);
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.data?.message || "Failed to delete FAQ");
+    }
   };
 
   const toggleAccordion = (index) => {
     setActiveIndex(activeIndex === index ? null : index);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const modules = {
@@ -163,7 +108,7 @@ const FAQ = () => {
     ],
   };
 
-  if (pageLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <LoadingIcon
@@ -188,7 +133,12 @@ const FAQ = () => {
         </button>
         <button
           className="custom_black_button uppercase"
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setShowForm(true);
+            setEditIndex(null);
+            setQuestion("");
+            setAnswer("");
+          }}
         >
           Add New faq
         </button>
@@ -215,101 +165,159 @@ const FAQ = () => {
             style={{ height: "150px", marginBottom: "1rem" }}
           />
           <div className="flex justify-between items-center mt-14 w-full">
-              {editIndex !== null && (
-                <button
-                  className="text-red-500"
-                  onClick={() => {
-                    setEditIndex(null);
-                    setQuestion("");
-                    setAnswer("");
-                  }}
-                >
-                  Cancel Edit
-                </button>
-              )}
-              {editIndex === null && (
-                <button
-                  className="px-4 py-2 border rounded-full"
-                  onClick={() => {
-                    setQuestion("");
-                    setAnswer("");
-                    setEditIndex(null);
-                    setShowForm(false);
-                  }}
-                >
-                  Clear
-                </button>
-              )}
+            {editIndex !== null && (
               <button
-                className="custom_black_button"
-                onClick={handleAddOrEditFaq}
-                disabled={loading}
+                className="text-red-500"
+                onClick={() => {
+                  setEditIndex(null);
+                  setQuestion("");
+                  setAnswer("");
+                  setShowForm(false);
+                }}
               >
-                {loading ? (
-                  <LoadingIcon icon="tail-spin" color="white" />
-                ) : (
-                  "Submit"
-                )}
+                Cancel Edit
               </button>
+            )}
+            {editIndex === null && (
+              <button
+                className="px-4 py-2 border rounded-full"
+                onClick={() => {
+                  setQuestion("");
+                  setAnswer("");
+                  setEditIndex(null);
+                  setShowForm(false);
+                }}
+              >
+                Clear
+              </button>
+            )}
+            <button
+              className="custom_black_button"
+              onClick={handleAddOrEditFaq}
+              disabled={isAdding || isUpdating}
+            >
+              {isAdding || isUpdating ? (
+                <LoadingIcon icon="tail-spin" color="white" className="w-6 h-6" />
+              ) : (
+                "Submit"
+              )}
+            </button>
           </div>
         </div>
       )}
 
-      {faqs.length === 0 && (
+      {faqsData?.data?.length === 0 ? (
         <div className="text-center text-red-400 w-full text-[12px] uppercase bg-white rounded-full p-3">
           No Record found
         </div>
-      )}
-      {faqs.map((faq, index) => (
-        <div key={index} className="mb-4 rounded-full">
-          <div
-            className="text-black p-4 flex justify-between items-center rounded-t-lg cursor-pointer"
-            style={{ backgroundColor: "#fff" }}
-            onClick={() => toggleAccordion(index)}
-          >
-            <span>
-              {index + 1}. {faq.question}
-            </span>
-            <div className="flex gap-10">
-              <button
-                className="text-sm text-red-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const confirmDelete = window.confirm(
-                    "Are you sure you want to delete this FAQ?"
-                  );
-                  if (confirmDelete) {
-                    handleDeleteFaq(index);
-                  }
-                }}
-              >
-                Delete
-              </button>
-              <button
-                className="text-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowForm(true);
-                  handleEditFaq(index);
-                }}
-              >
-                Edit
-              </button>
-              <Lucide
-                icon={activeIndex === index ? "ChevronUp" : "ChevronDown"}
-              />
-            </div>
-          </div>
-          {activeIndex === index && (
-            <div className=" p-4 bg-gray-50">
+      ) : (
+        <>
+          {faqsData?.data?.map((faq, index) => (
+            <div key={faq._id} className="mb-4 rounded-full">
               <div
-                className="text-sm text-gray-700"
-                dangerouslySetInnerHTML={{ __html: faq.answer }}
-              />
+                className="text-black p-4 flex justify-between items-center rounded-t-lg cursor-pointer"
+                style={{ backgroundColor: "#fff" }}
+                onClick={() => toggleAccordion(index)}
+              >
+                <span>
+                  {index + 1 + (currentPage - 1) * itemsPerPage}. {faq.question}
+                </span>
+                <div className="flex gap-10">
+                  <button
+                    className="text-sm text-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteId(faq._id);
+                      setDeleteModal(true);
+                    }}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    className="text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditFaq(faq);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <Lucide
+                    icon={activeIndex === index ? "ChevronUp" : "ChevronDown"}
+                  />
+                </div>
+              </div>
+              {activeIndex === index && (
+                <div className=" p-4 bg-gray-50">
+                  <div
+                    className="text-sm text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Pagination */}
+          {faqsData?.meta?.totalPage > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-4">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                Previous
+              </button>
+              {Array.from({ length: faqsData.meta.totalPage }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 rounded border ${currentPage === page ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === faqsData.meta.totalPage}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                Next
+              </button>
             </div>
           )}
-        </div>
-      ))}
+        </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={deleteModal} onHidden={() => setDeleteModal(false)}>
+        <ModalBody className="p-0">
+          <div className="p-5 text-center">
+            <Lucide icon="XCircle" className="w-16 h-16 text-danger mx-auto mt-3" />
+            <div className="text-3xl mt-5">Are you sure?</div>
+            <div className="text-slate-500 mt-2">
+              Do you really want to delete this FAQ? This action cannot be undone.
+            </div>
+          </div>
+          <div className="px-5 pb-8 text-center">
+            <button
+              type="button"
+              onClick={() => setDeleteModal(false)}
+              className="btn btn-outline-secondary w-24 mr-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              className="btn btn-danger w-24"
+            >
+              Delete
+            </button>
+          </div>
+        </ModalBody>
+      </Modal>
     </div>
   );
 };
