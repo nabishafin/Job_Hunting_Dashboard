@@ -2,15 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 
 const ProductPopup = ({ item, onClose, onSave, itemIndex, jobId, getJobDetails }) => {
-  const basePrice = useRef(item.qty > 0 ? item.price / item.qty : 0);
+  const basePrice = useRef(item.quantity > 0 ? item.price / item.quantity : 0);
   const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({ ...item });
+  const [formData, setFormData] = useState({ ...item, materialContent: item.materialContent || "" });
   const [isPriceManuallyEdited, setIsPriceManuallyEdited] = useState(false);
 
   useEffect(() => {
-    setFormData({ ...item });
-    basePrice.current = item.qty > 0 ? item.price / item.qty : 0;
+    setFormData({ ...item, materialContent: item.materialContent || "" });
+    basePrice.current = item.quantity > 0 ? item.price / item.quantity : 0;
     setIsPriceManuallyEdited(false);
   }, [item]);
 
@@ -20,15 +20,22 @@ const ProductPopup = ({ item, onClose, onSave, itemIndex, jobId, getJobDetails }
     setFormData((prev) => {
       let newData = { ...prev, [name]: value };
 
-      if (name === "qty" && !isPriceManuallyEdited) {
-        const qty = parseInt(value);
-        if (!isNaN(qty) && qty > 0) {
-          newData.price = parseFloat((qty * basePrice.current).toFixed(2));
+      if (name === "quantity" && !isPriceManuallyEdited) {
+        const quantity = parseInt(value);
+        if (!isNaN(quantity) && quantity > 0) {
+          newData.price = parseFloat((quantity * basePrice.current).toFixed(2));
         }
       }
 
       if (name === "price") {
         setIsPriceManuallyEdited(true);
+      }
+
+      if (name === "length" || name === "width" || name === "height") {
+        const l = name === "length" ? value : prev.length || "";
+        const w = name === "width" ? value : prev.width || "";
+        const h = name === "height" ? value : prev.height || "";
+        newData.dimensions = `${l}x${w}x${h}`;
       }
 
       return newData;
@@ -88,6 +95,17 @@ const ProductPopup = ({ item, onClose, onSave, itemIndex, jobId, getJobDetails }
           </div>
 
           <div>
+            <label className="block text-sm font-medium">Name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name || ""}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 mt-1"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium">Height</label>
             <input
               type="text"
@@ -121,8 +139,8 @@ const ProductPopup = ({ item, onClose, onSave, itemIndex, jobId, getJobDetails }
             <label className="block text-sm font-medium">Quantity</label>
             <input
               type="number"
-              name="qty"
-              value={formData.qty || 0}
+              name="quantity"
+              value={formData.quantity || 0}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 mt-1"
               min="1"
@@ -139,6 +157,23 @@ const ProductPopup = ({ item, onClose, onSave, itemIndex, jobId, getJobDetails }
               step="0.01"
               min="0"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Material</label>
+            <select
+              name="materialContent"
+              value={formData.materialContent || ""}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 mt-1"
+            >
+              <option value="">Select Material</option>
+              <option value="Glass">Glass</option>
+              <option value="Wood">Wood</option>
+              <option value="Metal">Metal</option>
+              <option value="Plastic">Plastic</option>
+              <option value="Ceramic">Ceramic</option>
+            </select>
           </div>
 
           <div className="flex justify-end mt-6">

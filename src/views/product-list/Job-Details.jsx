@@ -10,7 +10,7 @@ import useCreateOrEdit from "../../hooks/useCreateOrEdit";
 import PickupTypeSelector from "./PickupTypeSelector";
 import TimeSlotEditModal from "./TimeSlotEditModal";
 import FloorSelectPopup from "./FloowStepPopup";
-import AddProductAdmin from "./AddProductAdmin";
+// import AddProductAdmin from "./AddProductAdmin";
 import ExtraServiceModal from "./ExtraServiceModal";
 import { useGetJobByIdQuery, useUpdateJobMutation } from "../../redux/features/job/jobApi";
 
@@ -28,6 +28,7 @@ const JobDetails = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [itemIndex, setItemIndex] = useState(null);
+  const [isAddingNewItem, setIsAddingNewItem] = useState(false);
 
   const handleEdit = (item, ind) => {
     setSelectedItem(item);
@@ -42,7 +43,7 @@ const JobDetails = () => {
   const [floorSelectPopup, setFloorStepPopup] = useState(false);
   const [timeSlotType, setTimeSlotType] = useState("");
   const [addressType, setAddressType] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  // const [isOpen, setIsOpen] = useState(false);
   const [extraServiceIndex, setExtraServiceIndex] = useState(null);
   const [extraServiceInitialValues, setExtraServiceInitialValues] = useState(
     {}
@@ -147,6 +148,38 @@ const JobDetails = () => {
     }
   };
 
+  const handleAddItem = async (newItem) => {
+    // Construct the specific payload for adding an item
+    const payload = {
+      items: {
+        add: [newItem]
+      }
+    };
+
+    try {
+      await updateJob({ id: jobId, updatedData: payload }).unwrap();
+      toast.success("Item added successfully!");
+    } catch (error) {
+      toast.error("Failed to add item: " + (error.data?.message || error.message));
+    }
+  };
+
+  const handleEditItem = async (updatedItem) => {
+    // Construct the specific payload for updating an item
+    const payload = {
+      items: {
+        update: [updatedItem]
+      }
+    };
+
+    try {
+      await updateJob({ id: jobId, updatedData: payload }).unwrap();
+      toast.success("Item updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update item: " + (error.data?.message || error.message));
+    }
+  };
+
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
     setDate(selectedDate);
@@ -168,11 +201,27 @@ const JobDetails = () => {
     expired: "bg-gray-100 text-gray-800",
   };
 
-  const handleDelete = (index) => {
-    const updatedItems = items.filter((_, i) => i !== index);
-    handleUpdate({ items: updatedItems });
-    setDeleteConfirmationModal(false);
-    setItemIndex(null);
+  const handleDelete = async (index) => {
+    const itemToDelete = items[index];
+    if (!itemToDelete || !itemToDelete._id) {
+      toast.error("Cannot delete item: Item ID not found");
+      return;
+    }
+
+    const payload = {
+      items: {
+        remove: [itemToDelete._id]
+      }
+    };
+
+    try {
+      await updateJob({ id: jobId, updatedData: payload }).unwrap();
+      toast.success("Item deleted successfully!");
+      setDeleteConfirmationModal(false);
+      setItemIndex(null);
+    } catch (error) {
+      toast.error("Failed to delete item: " + (error.data?.message || error.message));
+    }
   };
 
   useEffect(() => {
@@ -260,7 +309,21 @@ const JobDetails = () => {
               <h2 className="text-md uppercase font-bold">Items ({items.length})</h2>
               <h2
                 className="custom_black_button_small"
-                onClick={() => setIsOpen(true)}
+                onClick={() => {
+                  setSelectedItem({
+                    name: "",
+                    img: "",
+                    quantity: 1,
+                    dimensions: "",
+                    materialContent: "",
+                    price: 0,
+                    length: "",
+                    width: "",
+                    height: ""
+                  });
+                  setIsAddingNewItem(true);
+                  setPopupOpen(true);
+                }}
               >
                 Add New Item
               </h2>
@@ -593,46 +656,53 @@ const JobDetails = () => {
           )}
         </div>
       </div>
+
       {/* Edit Product Popup */}
-      {popupOpen && selectedItem && (
-        <ProductPopup
-          getJobDetails={() => toast.success("Product updated (dummy mode)")}
-          jobId={jobId}
-          item={selectedItem}
-          itemIndex={itemIndex}
-          addressType={addressType}
-          pickupContact={pickupContact}
-          deliveryContact={deliveryContact}
-          onClose={() => setPopupOpen(false)}
-          onSave={(updatedItem) => {
-            const updated = items.map((it) =>
-              it.name === selectedItem.name ? updatedItem : it
-            );
-            handleUpdate({ items: updated });
-            setPopupOpen(false);
-          }}
-        />
-      )}
+      {
+        popupOpen && selectedItem && (
+          <ProductPopup
+            getJobDetails={() => toast.success("Product updated (dummy mode)")}
+            jobId={jobId}
+            item={selectedItem}
+            itemIndex={itemIndex}
+            addressType={addressType}
+            pickupContact={pickupContact}
+            deliveryContact={deliveryContact}
+            onClose={() => setPopupOpen(false)}
+            onSave={(updatedItem) => {
+              if (isAddingNewItem) {
+                handleAddItem(updatedItem);
+              } else {
+                handleEditItem(updatedItem);
+              }
+              setPopupOpen(false);
+              setIsAddingNewItem(false);
+            }}
+          />
+        )
+      }
       {/* //Edit address popup */}
-      {openAddressPopup && (
-        <AddressPopup
-          jobId={jobId}
-          getJobDetails={() => toast.success("Address updated (dummy mode)")}
-          fromAddress={fromAddress}
-          toAddress={toAddress}
-          addressType={addressType}
-          pickupContact={pickupContact}
-          deliveryContact={deliveryContact}
-          onClose={() => setOpenAddressPopup(false)}
-          onSave={(newFrom, newTo) => {
-            handleUpdate({
-              pickupAddress: newFrom || fromAddress,
-              deliveryAddress: newTo || toAddress
-            });
-            setOpenAddressPopup(false);
-          }}
-        />
-      )}
+      {
+        openAddressPopup && (
+          <AddressPopup
+            jobId={jobId}
+            getJobDetails={() => toast.success("Address updated (dummy mode)")}
+            fromAddress={fromAddress}
+            toAddress={toAddress}
+            addressType={addressType}
+            pickupContact={pickupContact}
+            deliveryContact={deliveryContact}
+            onClose={() => setOpenAddressPopup(false)}
+            onSave={(newFrom, newTo) => {
+              handleUpdate({
+                pickupAddress: newFrom || fromAddress,
+                deliveryAddress: newTo || toAddress
+              });
+              setOpenAddressPopup(false);
+            }}
+          />
+        )
+      }
       <Modal
         show={deleteConfirmationModal}
         onHidden={() => {
@@ -671,34 +741,38 @@ const JobDetails = () => {
           </div>
         </ModalBody>
       </Modal>
-      {pickupTypePopup && (
-        <PickupTypeSelector
-          getJobDetails={() => { }}
-          pickupType={pickupType}
-          itemSource={jobDetails?.itemSource || ""}
-          onClose={() => setPickUpTypePopup(false)}
-          jobId={jobId}
-          onSave={(newType) => handleUpdate({ transportationType: { ...transportationType, name: newType } })}
-        />
-      )}
-      {timeSlotPopup && (
-        <TimeSlotEditModal
-          open={setTimeSlotPopup}
-          getJobDetails={() => toast.success("Time slot updated (dummy mode)")}
-          timeSlot={timeSlot}
-          type={timeSlotType}
-          onClose={() => setTimeSlotPopup(false)}
-          jobId={jobId}
-          onSave={(newTimeSlot) => {
-            if (timeSlotType === "pickup") {
-              handleUpdate({ pickupDateInfo: { ...pickupDateInfo, timeSlot: newTimeSlot } });
-            } else {
-              handleUpdate({ deliveryDateInfo: { ...deliveryDateInfo, timeSlot: newTimeSlot } });
-            }
-            setTimeSlotPopup(false);
-          }}
-        />
-      )}
+      {
+        pickupTypePopup && (
+          <PickupTypeSelector
+            getJobDetails={() => { }}
+            pickupType={pickupType}
+            itemSource={jobDetails?.itemSource || ""}
+            onClose={() => setPickUpTypePopup(false)}
+            jobId={jobId}
+            onSave={(newType) => handleUpdate({ transportationType: { ...transportationType, name: newType } })}
+          />
+        )
+      }
+      {
+        timeSlotPopup && (
+          <TimeSlotEditModal
+            open={setTimeSlotPopup}
+            getJobDetails={() => toast.success("Time slot updated (dummy mode)")}
+            timeSlot={timeSlot}
+            type={timeSlotType}
+            onClose={() => setTimeSlotPopup(false)}
+            jobId={jobId}
+            onSave={(newTimeSlot) => {
+              if (timeSlotType === "pickup") {
+                handleUpdate({ pickupDateInfo: { ...pickupDateInfo, timeSlot: newTimeSlot } });
+              } else {
+                handleUpdate({ deliveryDateInfo: { ...deliveryDateInfo, timeSlot: newTimeSlot } });
+              }
+              setTimeSlotPopup(false);
+            }}
+          />
+        )
+      }
       <FloorSelectPopup
         open={floorSelectPopup}
         onClose={() => setFloorStepPopup(false)}
@@ -715,7 +789,7 @@ const JobDetails = () => {
           setFloorStepPopup(false);
         }}
       />
-      {isOpen && (
+      {/* {isOpen && (
         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-md shadow-lg max-w-2xl w-full">
             <AddProductAdmin
@@ -726,7 +800,7 @@ const JobDetails = () => {
             />
           </div>
         </div>
-      )}
+      )} */}
       <ExtraServiceModal
         isOpen={extraServiceModalOpen}
         onClose={() => setExtraServiceModalOpen(false)}
@@ -746,8 +820,11 @@ const JobDetails = () => {
           setExtraServiceModalOpen(false);
         }}
       />
-    </div>
+    </div >
   );
 };
 
 export default JobDetails;
+
+
+
