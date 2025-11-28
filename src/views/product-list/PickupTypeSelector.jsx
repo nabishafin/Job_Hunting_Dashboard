@@ -24,21 +24,10 @@ const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave, getJobDet
     }
   }, [localPickupType]);
 
-  const handleSave = async (type, source) => {
-    try {
-      const response = await submitData(`/admin/update-job/${jobId}`, {
-        pickupType: type,
-        itemSource: source,
-      }, 'PUT');
-      toast.success('Pickup type updated successfully');
-      getJobDetails();
-      onClose();
-
-    } catch (error) {
-      console.error('Error saving pickup type:', error);
-    }
-
-  }
+  const handleSave = (type, source) => {
+    onSave(type, source);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -51,8 +40,8 @@ const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave, getJobDet
             <div
               key={type}
               className={`border p-3 rounded cursor-pointer text-center ${localPickupType === type
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-800"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-800"
                 }`}
               onClick={() => setLocalPickupType(type)}
             >
@@ -70,8 +59,8 @@ const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave, getJobDet
                 <div
                   key={source}
                   className={`border p-3 rounded cursor-pointer text-center ${localSource === source
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-800"
                     }`}
                   onClick={() => setLocalSource(source)}
                 >

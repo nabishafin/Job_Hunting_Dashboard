@@ -35,30 +35,16 @@ const TimeSlotEditModal = ({
     }
   }, [timeSlot, type]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!startTime || !endTime || !cost) {
       toast.error("Please enter both times and cost.");
       return;
     }
 
     const name = `${startTime} - ${endTime}`;
-    const payload = {
-      timeSlot: {
-        ...timeSlot,
-        ...(type === "pickup"
-          ? { start: name, cost }
-          : { end: name, cost }),
-      },
-    };
-
-    try {
-      await submitData(`/admin/update-job/${jobId}`, payload, "PUT");
-      toast.success("Time slot updated successfully");
-      getJobDetails();
-      onClose();
-    } catch (error) {
-      console.error("Error saving time slot:", error);
-    }
+    // Pass the formatted time slot string and cost back to parent
+    onSave(name, cost);
+    onClose();
   };
 
   if (!open) return null;

@@ -500,31 +500,25 @@ const JobDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold text-gray-700 mb-2">
-                  Pickup Contact
+                  Pickup Address
                 </h3>
-                <p className="font-medium">
-                  {pickupContact?.firstName || userId?.name?.firstName} {pickupContact?.lastName || userId?.name?.lastName}
-                </p>
-                <p>{pickupContact?.phoneNumber || userId?.phone}</p>
-                <p>{pickupContact?.email || userId?.email}</p>
-                <p className="mt-2">{pickupContact?.smartHomeAddress}</p>
-                <p>
-                  {pickupContact?.zipCode}, {pickupContact?.city}
-                </p>
+                <p className="font-medium">{fromAddress?.streetAddress}</p>
+                <p>{fromAddress?.cityOrState}</p>
+                <p>{fromAddress?.country} - {fromAddress?.zipCode}</p>
+                {fromAddress?.description && (
+                  <p className="mt-2 text-sm text-gray-600">{fromAddress?.description}</p>
+                )}
               </div>
               <div>
                 <h3 className="font-semibold text-gray-700 mb-2">
-                  Delivery Contact
+                  Delivery Address
                 </h3>
-                <p className="font-medium">
-                  {deliveryContact?.firstName || courierId?.name?.firstName || "N/A"} {deliveryContact?.lastName || courierId?.name?.lastName}
-                </p>
-                <p>{deliveryContact?.phoneNumber || courierId?.phone}</p>
-                <p>{deliveryContact?.email || courierId?.email}</p>
-                <p className="mt-2">{deliveryContact?.smartHomeAddress}</p>
-                <p>
-                  {deliveryContact?.zipCode}, {deliveryContact?.city}
-                </p>
+                <p className="font-medium">{toAddress?.streetAddress}</p>
+                <p>{toAddress?.cityOrState}</p>
+                <p>{toAddress?.country} - {toAddress?.zipCode}</p>
+                {toAddress?.description && (
+                  <p className="mt-2 text-sm text-gray-600">{toAddress?.description}</p>
+                )}
               </div>
             </div>
           </div>
@@ -587,13 +581,27 @@ const JobDetails = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Helpers:</span>
-                <span className="font-medium">{extraServices.helpers}</span>
+                <span className="font-medium">{extraService?.service?.options || "N/A"}</span>
+                <span
+                  className="font-medium cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => {
+                    setExtraServiceInitialValues({
+                      options: extraService?.service?.options || "",
+                      price: extraService?.service?.price || 0,
+                      type: 'service'
+                    });
+                    setExtraServiceIndex(0);
+                    setExtraServiceModalOpen(true);
+                  }}
+                >
+                  Edit
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Floor:</span>
                 <span className="font-medium">{extraServices?.options || extraServices?.level || 0}</span>
                 <span
-                  className="font-medium cursor-pointer"
+                  className="font-medium cursor-pointer text-blue-600 hover:underline"
                   onClick={() => setFloorStepPopup(true)}
                 >
                   Edit
@@ -763,7 +771,10 @@ const JobDetails = () => {
             itemSource={jobDetails?.itemSource || ""}
             onClose={() => setPickUpTypePopup(false)}
             jobId={jobId}
-            onSave={(newType) => handleUpdate({ transportationType: { ...transportationType, name: newType } })}
+            onSave={(newType, newSource) => handleUpdate({
+              transportationType: { ...transportationType, name: newType },
+              itemSource: newSource
+            })}
           />
         )
       }
@@ -776,12 +787,17 @@ const JobDetails = () => {
             type={timeSlotType}
             onClose={() => setTimeSlotPopup(false)}
             jobId={jobId}
-            onSave={(newTimeSlot) => {
+            onSave={(newTimeSlot, newCost) => {
+              const updates = {};
               if (timeSlotType === "pickup") {
-                handleUpdate({ pickupDateInfo: { ...pickupDateInfo, timeSlot: newTimeSlot } });
+                updates.pickupDateInfo = { ...pickupDateInfo, timeSlot: newTimeSlot };
               } else {
-                handleUpdate({ deliveryDateInfo: { ...deliveryDateInfo, timeSlot: newTimeSlot } });
+                updates.deliveryDateInfo = { ...deliveryDateInfo, timeSlot: newTimeSlot };
               }
+              if (newCost) {
+                updates.timeSlotCost = parseFloat(newCost);
+              }
+              handleUpdate(updates);
               setTimeSlotPopup(false);
             }}
           />
@@ -803,18 +819,6 @@ const JobDetails = () => {
           setFloorStepPopup(false);
         }}
       />
-      {/* {isOpen && (
-        <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-md shadow-lg max-w-2xl w-full">
-            <AddProductAdmin
-              close={() => setIsOpen(false)}
-              jobId={jobId}
-              getJobDetails={() => { }} // Refetch is handled by RTK Query tags
-              onSave={(newItem) => handleUpdate({ items: [...items, newItem] })} // Assuming AddProductAdmin passes back the new item
-            />
-          </div>
-        </div>
-      )} */}
       <ExtraServiceModal
         isOpen={extraServiceModalOpen}
         onClose={() => setExtraServiceModalOpen(false)}

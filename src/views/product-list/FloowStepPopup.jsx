@@ -109,26 +109,25 @@ const FloorSelectPopup = ({ open, onClose, initialValue, onSave, getJobDetails, 
 
   if (!open) return null;
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!selectedFloor) return;
 
-    console.log('Saving floor:', selectedFloor);
     const payload = {
-      helpers: initialValue?.helpers, // 0, 1, or 2 couriers
-      floor: selectedFloor?.name || initialValue?.floor, // e.g., 0 (Ground)
-      elevator: initialValue?.elevator, // true or false
-      help: initialValue?.help, // true or false
-    }
-    try {
-      const res = await submitData(`/admin/update-job/${jobId}`, { extraServices: payload }, 'PUT')
-      toast.success('Floor selection updated successfully');
-      getJobDetails()
-      onClose();
-    } catch (error) {
-      console.error("Failed to save floor selection", error);
+      helpers: initialValue?.helpers,
+      floor: selectedFloor?.name || initialValue?.floor,
+      elevator: initialValue?.elevator,
+      help: initialValue?.help,
+      // We might want to include the price update here if the backend expects it, 
+      // but the current logic in Job-Details calculates cost based on this.
+      // For now, we pass the floor details.
+      options: selectedFloor?.name, // Ensure options is updated for display
+      price: selectedFloor?.price, // Ensure price is updated
+      level: selectedFloor?.id // Ensure level is updated if needed
+    };
 
-    }
-  }
+    onSave(payload);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">

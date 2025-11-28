@@ -65,7 +65,7 @@ const ProductPopup = ({ item, onClose, onSave, itemIndex, jobId, getJobDetails }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-lg relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-lg relative max-h-[75vh] overflow-y-auto">
         <h3 className="text-xl font-bold mb-4">Edit Product</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
 

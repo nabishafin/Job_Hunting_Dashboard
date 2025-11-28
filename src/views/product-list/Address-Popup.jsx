@@ -10,34 +10,24 @@ const parseAddressComponents = (place, addressType, address) => {
   const components = place.address_components || [];
   const get = (type) =>
     components.find((c) => c.types.includes(type))?.long_name || "-";
-  if (addressType === 'transport') {
-    return {
-      streetAddress: place.formatted_address || "-",
-      cityOrState: get("locality") || get("sublocality") || get("administrative_area_level_2"),
-      country: get("country"),
-      zipCode: get("postal_code"),
-      lat: place.geometry?.location?.lat() || 0,
-      lng: place.geometry?.location?.lng() || 0,
-    }
-  }
-  if (addressType === 'contact') {
-    return {
-      // address: place.formatted_address || "-",
-      smartHomeAddress: place.formatted_address || address?.smartHomeAddress || "",
-      city: get("locality") || get("sublocality") || get("administrative_area_level_2"),
-      region: get("administrative_area_level_1") || address?.region || "",
-      country: get("country"),
-      zipCode: get("postal_code") || address?.zipCode || "",
-      // lat: place.geometry?.location?.lat() || 0,
-      // lng: place.geometry?.location?.lng() || 0,
-    };
-  }
+
+  // Both transport and contact use the same address structure
+  return {
+    streetAddress: place.formatted_address || "-",
+    cityOrState: get("locality") || get("sublocality") || get("administrative_area_level_2"),
+    country: get("country"),
+    zipCode: get("postal_code"),
+    description: address?.description || "",
+    lat: place.geometry?.location?.lat() || 0,
+    lng: place.geometry?.location?.lng() || 0,
+  };
 }
 
 
 const AddressPopup = ({ fromAddress, toAddress, onClose, onSave, jobId, getJobDetails, addressType, pickupContact, deliveryContact }) => {
-  const [fromData, setFromData] = useState(addressType === 'transport' ? fromAddress : pickupContact || {});
-  const [toData, setToData] = useState(addressType === 'transport' ? toAddress : deliveryContact || {});
+  // Use fromAddress and toAddress for both transport and contact types
+  const [fromData, setFromData] = useState(fromAddress || {});
+  const [toData, setToData] = useState(toAddress || {});
   const { submitData } = useCreateOrEdit()
 
   const fromRef = useRef(null);
@@ -52,14 +42,14 @@ const AddressPopup = ({ fromAddress, toAddress, onClose, onSave, jobId, getJobDe
   const handleFromChange = () => {
     const place = fromRef.current?.getPlaces?.()[0];
     if (place) {
-      setFromData(parseAddressComponents(place, addressType, pickupContact));
+      setFromData(parseAddressComponents(place, addressType, fromData));
     }
   };
 
   const handleToChange = () => {
     const place = toRef.current?.getPlaces?.()[0];
     if (place) {
-      setToData(parseAddressComponents(place, addressType, deliveryContact));
+      setToData(parseAddressComponents(place, addressType, toData));
     }
   };
 
@@ -82,16 +72,9 @@ const AddressPopup = ({ fromAddress, toAddress, onClose, onSave, jobId, getJobDe
               >
                 <input
                   type="text"
-                  value={fromData.streetAddress || fromData?.smartHomeAddress || ""}
-                  onChange={(e) => {
-                    if (addressType === 'transport') {
-
-                      setFromData({ ...fromData, streetAddress: e.target.value })
-                    }
-                    if (addressType === 'contact') {
-                      setFromData({ ...fromData, smartHomeAddress: e.target.value })
-                    }
-                  }
+                  value={fromData.streetAddress || ""}
+                  onChange={(e) =>
+                    setFromData({ ...fromData, streetAddress: e.target.value })
                   }
                   placeholder="Enter from address"
                   className="w-full p-2 border rounded"
@@ -113,7 +96,7 @@ const AddressPopup = ({ fromAddress, toAddress, onClose, onSave, jobId, getJobDe
               >
                 <input
                   type="text"
-                  value={toData.streetAddress || toData?.smartHomeAddress || ""}
+                  value={toData.streetAddress || ""}
                   onChange={(e) =>
                     setToData({ ...toData, streetAddress: e.target.value })
                   }
