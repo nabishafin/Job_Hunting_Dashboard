@@ -61,8 +61,11 @@ const JobDetails = () => {
     deliveryContact,
     transportationType,
     pickupDateInfo,
+    deliveryDateInfo,
     extraService,
     totalPrice,
+    elevatorCost,
+    timeSlotCost,
     createdAt,
     userId,
     courierId,
@@ -74,9 +77,9 @@ const JobDetails = () => {
   const pickupType = transportationType?.name || "N/A";
   const pickupDate = pickupDateInfo?.date;
   const timeSlot = {
-    start: pickupDateInfo?.timeSlot?.split(" - ")[0] || "N/A",
-    end: pickupDateInfo?.timeSlot?.split(" - ")[1] || "N/A",
-    cost: 0 // Not in sample response, defaulting
+    start: pickupDateInfo?.timeSlot || "N/A",
+    end: deliveryDateInfo?.timeSlot || "N/A",
+    cost: timeSlotCost || 0
   };
   const extraServices = extraService?.floor || {}; // Mapping floor details
 
@@ -588,7 +591,7 @@ const JobDetails = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Floor:</span>
-                <span className="font-medium">{extraServices?.level || 0}</span>
+                <span className="font-medium">{extraServices?.options || extraServices?.level || 0}</span>
                 <span
                   className="font-medium cursor-pointer"
                   onClick={() => setFloorStepPopup(true)}
@@ -601,6 +604,10 @@ const JobDetails = () => {
                 <span className="font-medium">
                   {extraServices?.elevator ? "Yes" : "No"}
                 </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Elevator Cost:</span>
+                <span className="font-medium">€{(elevatorCost || 0).toFixed(2)}</span>
               </div>
               <div className="pt-3 border-t border-gray-200 mt-3">
                 <div className="flex justify-between font-bold text-lg">
@@ -790,7 +797,7 @@ const JobDetails = () => {
           handleUpdate({
             extraService: {
               ...extraService,
-              floor: newFloorDetails
+              floor: { ...extraService.floor, ...newFloorDetails }
             }
           });
           setFloorStepPopup(false);

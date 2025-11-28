@@ -96,9 +96,9 @@ const floorsArray = [
   }
 ];
 
-const FloorSelectPopup = ({ open, onClose, initialValue, onSave , getJobDetails , jobId }) => {
+const FloorSelectPopup = ({ open, onClose, initialValue, onSave, getJobDetails, jobId }) => {
   const [selectedFloor, setSelectedFloor] = useState(null);
-  const {submitData} = useCreateOrEdit()
+  const { submitData } = useCreateOrEdit()
 
   useEffect(() => {
     if (initialValue?.floor) {
@@ -109,23 +109,23 @@ const FloorSelectPopup = ({ open, onClose, initialValue, onSave , getJobDetails 
 
   if (!open) return null;
 
-  const handleSave = async() =>{
+  const handleSave = async () => {
     if (!selectedFloor) return;
 
     console.log('Saving floor:', selectedFloor);
     const payload = {
-         helpers: initialValue?.helpers, // 0, 1, or 2 couriers
-    floor: selectedFloor?.name || initialValue?.floor, // e.g., 0 (Ground)
-    elevator: initialValue?.elevator, // true or false
-    help: initialValue?.help, // true or false
+      helpers: initialValue?.helpers, // 0, 1, or 2 couriers
+      floor: selectedFloor?.name || initialValue?.floor, // e.g., 0 (Ground)
+      elevator: initialValue?.elevator, // true or false
+      help: initialValue?.help, // true or false
     }
-    try{
-        const res = await submitData(`/admin/update-job/${jobId}`,{extraServices:payload},'PUT')
-        toast.success('Floor selection updated successfully');
-        getJobDetails()
-        onClose();
-    }catch(error){
-        console.error("Failed to save floor selection", error);
+    try {
+      const res = await submitData(`/admin/update-job/${jobId}`, { extraServices: payload }, 'PUT')
+      toast.success('Floor selection updated successfully');
+      getJobDetails()
+      onClose();
+    } catch (error) {
+      console.error("Failed to save floor selection", error);
 
     }
   }

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import useCreateOrEdit from "../../hooks/useCreateOrEdit";
 import toast from "react-hot-toast";
 
-const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave , getJobDetails, jobId}) => {
+const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave, getJobDetails, jobId }) => {
   const pickupTypes = ["private home", "store", "auction", "small move"];
   const sources = {
     "private home": ["family", "Marktplaats", "facebook", "2dehands", "others"],
     auction: ["Troostwijk", "Vavato", "Belga Veiling", "Onlineveilingmeester"],
   };
-  const {submitData} = useCreateOrEdit();
+  const { submitData } = useCreateOrEdit();
 
   // Internal state to manage selection
   const [localPickupType, setLocalPickupType] = useState(pickupType || "");
@@ -24,18 +24,18 @@ const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave , getJobDe
     }
   }, [localPickupType]);
 
-  const handleSave = async(type, source) => {
-    try{
-        const response = await submitData(`/admin/update-job/${jobId}`, {
-          pickupType: type,
-            itemSource: source,
-        }, 'PUT');
-        toast.success('Pickup type updated successfully');
-        getJobDetails();
-        onClose();
+  const handleSave = async (type, source) => {
+    try {
+      const response = await submitData(`/admin/update-job/${jobId}`, {
+        pickupType: type,
+        itemSource: source,
+      }, 'PUT');
+      toast.success('Pickup type updated successfully');
+      getJobDetails();
+      onClose();
 
-    }catch(error){
-        console.error('Error saving pickup type:', error);
+    } catch (error) {
+      console.error('Error saving pickup type:', error);
     }
 
   }
@@ -50,11 +50,10 @@ const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave , getJobDe
           {pickupTypes.map((type) => (
             <div
               key={type}
-              className={`border p-3 rounded cursor-pointer text-center ${
-                localPickupType === type
+              className={`border p-3 rounded cursor-pointer text-center ${localPickupType === type
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-800"
-              }`}
+                }`}
               onClick={() => setLocalPickupType(type)}
             >
               {type}
@@ -70,11 +69,10 @@ const PickupTypeSelector = ({ pickupType, itemSource, onClose, onSave , getJobDe
               {sources[localPickupType].map((source) => (
                 <div
                   key={source}
-                  className={`border p-3 rounded cursor-pointer text-center ${
-                    localSource === source
+                  className={`border p-3 rounded cursor-pointer text-center ${localSource === source
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-800"
-                  }`}
+                    }`}
                   onClick={() => setLocalSource(source)}
                 >
                   {source}

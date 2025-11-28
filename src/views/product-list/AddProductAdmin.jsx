@@ -178,8 +178,8 @@ const AddProductAdmin = ({ close, jobId, getJobDetails }) => {
                   key={mat}
                   onClick={() => setMaterial(mat)}
                   className={`text-center py-2 rounded cursor-pointer border ${material === mat
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700"
                     }`}
                 >
                   {mat}
