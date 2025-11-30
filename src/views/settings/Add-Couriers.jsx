@@ -1,30 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { LoadingIcon } from "../../base-components";
-import {
-  MAPS_API_KEY,
-  REGISTER_COURIER,
-  UPDATE_COURIER,
-} from "../../constants";
-import httpRequest from "../../axios";
-import { selectAccessToken } from "../../stores/userSlice";
-import { useSelector } from "react-redux";
+import { MAPS_API_KEY } from "../../constants";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import useUnauthenticate from "../../hooks/handle-unauthenticated";
 import { Lucide } from "../../base-components";
 import { StandaloneSearchBox, useJsApiLoader } from "@react-google-maps/api";
+import { useAddCourierMutation, useUpdateCourierMutation } from "../../redux/features/couriers/couriersApi";
 
 const AddCouriers = () => {
-  const handleUnAuthenticate = useUnauthenticate();
-  const accessToken = useSelector(selectAccessToken);
   const location = useLocation();
   const courierData = location.state?.data;
   const [isEdit, setIsEdit] = useState(false);
-  const [previewImages, setPreviewImages] = useState([]);
   const navigate = useNavigate();
   const companyLocationRef = useRef(null);
+
+  // RTK Query hooks
+  const [addCourier, { isLoading: isAdding }] = useAddCourierMutation();
+  const [updateCourier, { isLoading: isUpdating }] = useUpdateCourierMutation();
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -35,33 +29,29 @@ const AddCouriers = () => {
   useEffect(() => {
     if (courierData) {
       setIsEdit(true);
-      // Initialize preview images if in edit mode
-      if (courierData.documents && courierData.documents.length > 0) {
-        setPreviewImages(
-          courierData.documents.map(
-            (doc) => `data:image/png;base64,${doc.base64}`
-          )
-        );
-      }
     }
   }, [courierData]);
 
   const initialValues = {
-    firstName: courierData?.firstName || "",
-    lastName: courierData?.lastName || "",
+    firstName: courierData?.name?.firstName || "",
+    lastName: courierData?.name?.lastName || "",
     email: courierData?.email || "",
-    phoneNumber: courierData?.phoneNumber || "",
+    phone: courierData?.phone || "",
+    password: "", // Only for new couriers
     companyName: courierData?.companyName || "",
     communicationMode: courierData?.communicationMode || "",
-    companyLocation: courierData?.companyLocation?.address || "",
-    lat: courierData?.companyLocation?.lat || 0,
-    lng: courierData?.companyLocation?.lng || 0,
-    howYouKnow: courierData?.howYouKnow || "",
-    experienceWithCourier: courierData?.experienceWithCourier || "",
-    companyLegalForm: courierData?.companyLegalForm || "",
-    documents: courierData?.documents || [],
-    status: courierData?.status || 1,
-    profileVerified: courierData?.profileVerified || true,
+    companyLocation: courierData?.companyLocation || "",
+    howKnow: courierData?.howKnow || "",
+    courierExperience: courierData?.courierExperience || "",
+    legalForm: courierData?.legalForm || "",
+    kvkNumber: courierData?.kvkNumber || "",
+    document: courierData?.document || "",
+    status: courierData?.status || "active",
+    profileVerified: courierData?.profileVerified || "unverified",
+    role: "courier",
+    emailStatus: "verified",
+    isBlocked: false,
+    isDeleted: false,
     isEdit: !!courierData,
   };
 
@@ -69,106 +59,73 @@ const AddCouriers = () => {
     firstName: Yup.string().required("First Name is required"),
     lastName: Yup.string().required("Last Name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
-    phoneNumber: Yup.string()
+    phone: Yup.string()
       .matches(/^[0-9]+$/, "Must be only digits")
       .min(9, "Must be at least 9 digits")
       .required("Phone Number is required"),
+
+    // Password only required for new couriers
+    ...(!isEdit && {
+      password: Yup.string()
+        .required("Password is required")
+        .min(6, "Password must be at least 6 characters"),
+    }),
+
     companyName: Yup.string().required("Company Name is required"),
     communicationMode: Yup.string().required("Communication Mode is required"),
     companyLocation: Yup.string().required("Company Location is required"),
-    howYouKnow: Yup.string().required("This field is required"),
-    experienceWithCourier: Yup.string().required(
-      "Experience With Courier is required"
-    ),
-    companyLegalForm: Yup.string().required("Legal Form is required"),
-    lat: Yup.number().required("Latitude is required"),
-    lng: Yup.number().required("Longitude is required"),
-    documents: Yup.array().when("isEdit", {
-      is: false,
-      then: Yup.array()
-        .min(1, "At least one document is required")
-        .required("Documents are required"),
-    }),
+    howKnow: Yup.string().required("This field is required"),
+    courierExperience: Yup.string().required("Courier Experience is required"),
+    legalForm: Yup.string().required("Legal Form is required"),
   });
-
-  const handleFileUpload = (event, setFieldValue) => {
-    const files = Array.from(event.target.files);
-    if (files.length === 0) return;
-
-    const newPreviewImages = [];
-    const newDocuments = [];
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviewImages.push(reader.result);
-        newDocuments.push({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          base64: reader.result.split(",")[1],
-        });
-
-        if (newPreviewImages.length === files.length) {
-          setPreviewImages((prev) => [...prev, ...newPreviewImages]);
-          setFieldValue("documents", [
-            ...initialValues.documents,
-            ...newDocuments,
-          ]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeImage = (index, setFieldValue) => {
-    const newPreviewImages = [...previewImages];
-    const newDocuments = [...initialValues.documents];
-
-    newPreviewImages.splice(index, 1);
-    newDocuments.splice(index, 1);
-
-    setPreviewImages(newPreviewImages);
-    setFieldValue("documents", newDocuments);
-  };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const url = isEdit
-        ? `${UPDATE_COURIER}/${courierData._id}`
-        : REGISTER_COURIER;
-      const method = isEdit ? httpRequest.post : httpRequest.post;
-
+      // Construct payload matching TUser interface
       const payload = {
-        ...values,
-        companyLocation: {
-          address: values.companyLocation,
-          lat: values.lat,
-          lng: values.lng,
+        name: {
+          firstName: values.firstName,
+          lastName: values.lastName,
         },
+        email: values.email,
+        phone: values.phone,
+        role: "courier",
+        status: values.status,
+        emailStatus: "verified",
+        isBlocked: false,
+        isDeleted: false,
+        companyName: values.companyName,
+        companyLocation: values.companyLocation,
+        communicationMode: values.communicationMode,
+        howKnow: values.howKnow,
+        courierExperience: values.courierExperience,
+        legalForm: values.legalForm,
+        kvkNumber: values.kvkNumber || "",
+        document: values.document || "",
+        profileVerified: values.profileVerified,
+
+        // Only include password for new couriers
+        ...(isEdit ? {} : { password: values.password }),
       };
 
-      const response = await method(url, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      let response;
 
-      if (response.status === 200 || response.status === 201) {
-        toast.success(
-          response?.data?.message || "Courier details saved successfully."
-        );
-        navigate("/couriers");
+      if (isEdit) {
+        // Update existing courier
+        response = await updateCourier({
+          id: courierData._id,
+          ...payload,
+        }).unwrap();
       } else {
-        toast.error("Something went wrong.");
+        // Create new courier
+        response = await addCourier(payload).unwrap();
       }
+
+      toast.success(response.message || "Courier saved successfully!");
+      navigate("/couriers");
     } catch (error) {
-      toast.error(
-        error?.response?.data?.msg || "An unknown error occurred."
-      );
-      if (error?.response?.status === 401) {
-        handleUnAuthenticate();
-      }
+      console.error("Error saving courier:", error);
+      toast.error(error?.data?.message || "Failed to save courier");
     } finally {
       setSubmitting(false);
     }
@@ -272,17 +229,37 @@ const AddCouriers = () => {
                     </div>
                     <Field
                       type="text"
-                      name="phoneNumber"
+                      name="phone"
                       placeholder="Phone Number"
                       className="w-full p-2 mt-2 border rounded-md pl-12"
                     />
                   </div>
                   <ErrorMessage
-                    name="phoneNumber"
+                    name="phone"
                     component="div"
                     className="text-red-600"
                   />
                 </div>
+
+                {/* Password - Only for new couriers */}
+                {!isEdit && (
+                  <div className="form-group">
+                    <label>
+                      Password <span className="required">*</span>
+                    </label>
+                    <Field
+                      type="password"
+                      name="password"
+                      placeholder="Password"
+                      className="w-full p-2 mt-2 border rounded-md"
+                    />
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-red-600"
+                    />
+                  </div>
+                )}
 
                 {/* Company Name */}
                 <div className="form-group">
@@ -313,8 +290,8 @@ const AddCouriers = () => {
                     className="w-full p-2 mt-2 border rounded-md"
                   >
                     <option value="">Select Mode</option>
-                    <option value="WhatsApp">WhatsApp</option>
-                    <option value="Text message">Text message</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="textMessage">Text message</option>
                   </Field>
                   <ErrorMessage
                     name="communicationMode"
@@ -323,7 +300,6 @@ const AddCouriers = () => {
                   />
                 </div>
 
-                {/* Company Location */}
                 {/* Company Location */}
                 <div className="form-group col-span-2">
                   <label>
@@ -344,25 +320,16 @@ const AddCouriers = () => {
                                 "companyLocation",
                                 place.formatted_address
                               );
-                              setFieldValue(
-                                "lat",
-                                place.geometry.location.lat()
-                              );
-                              setFieldValue(
-                                "lng",
-                                place.geometry.location.lng()
-                              );
                             }
                           }
                         }}
                       >
                         <input
                           name="companyLocation"
-                          className={`w-full p-2 mt-2 border rounded-md ${
-                            touched.companyLocation && errors.companyLocation
+                          className={`w-full p-2 mt-2 border rounded-md ${touched.companyLocation && errors.companyLocation
                               ? "border-red-500"
                               : ""
-                          }`}
+                            }`}
                           placeholder="Company Location"
                           onChange={handleChange}
                           onBlur={handleBlur}
@@ -381,7 +348,6 @@ const AddCouriers = () => {
                     className="text-red-600"
                   />
                 </div>
-               
 
                 {/* How You Know */}
                 <div className="form-group">
@@ -390,16 +356,16 @@ const AddCouriers = () => {
                   </label>
                   <Field
                     as="select"
-                    name="howYouKnow"
+                    name="howKnow"
                     className="w-full p-2 mt-2 border rounded-md"
                   >
                     <option value="">Select Option</option>
-                    <option value="Social Media">Social Media</option>
-                    <option value="Website">Website</option>
-                    <option value="Google">Google</option>
+                    <option value="google">Google</option>
+                    <option value="socialMedia">Social Media</option>
+                    <option value="website">Website</option>
                   </Field>
                   <ErrorMessage
-                    name="howYouKnow"
+                    name="howKnow"
                     component="div"
                     className="text-red-600"
                   />
@@ -412,7 +378,7 @@ const AddCouriers = () => {
                   </label>
                   <Field
                     as="select"
-                    name="experienceWithCourier"
+                    name="courierExperience"
                     className="w-full p-2 mt-2 border rounded-md"
                   >
                     <option value="">Select Experience</option>
@@ -428,7 +394,7 @@ const AddCouriers = () => {
                     </option>
                   </Field>
                   <ErrorMessage
-                    name="experienceWithCourier"
+                    name="courierExperience"
                     component="div"
                     className="text-red-600"
                   />
@@ -441,7 +407,7 @@ const AddCouriers = () => {
                   </label>
                   <Field
                     as="select"
-                    name="companyLegalForm"
+                    name="legalForm"
                     className="w-full p-2 mt-2 border rounded-md"
                   >
                     <option value="">Select Legal Form</option>
@@ -454,7 +420,7 @@ const AddCouriers = () => {
                     <option value="Eenmanszaak">Eenmanszaak</option>
                   </Field>
                   <ErrorMessage
-                    name="companyLegalForm"
+                    name="legalForm"
                     component="div"
                     className="text-red-600"
                   />
@@ -468,8 +434,8 @@ const AddCouriers = () => {
                     name="status"
                     className="w-full p-2 mt-2 border rounded-md"
                   >
-                    <option value={1}>Active</option>
-                    <option value={2}>Blocked</option>
+                    <option value="active">Active</option>
+                    <option value="blocked">Blocked</option>
                   </Field>
                 </div>
 
@@ -481,104 +447,20 @@ const AddCouriers = () => {
                     name="profileVerified"
                     className="w-full p-2 mt-2 border rounded-md"
                   >
-                    <option value={true}>Verified</option>
-                    <option value={false}>Not Verified</option>
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Not Verified</option>
                   </Field>
                 </div>
               </div>
-
-              {/* Document Upload Section */}
-              <div className="form-group mt-4">
-                <label>
-                  Documents {!isEdit && <span className="required">*</span>}
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mt-2">
-                  <input
-                    type="file"
-                    id="document-upload"
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e, setFieldValue)}
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx"
-                  />
-                  <label
-                    htmlFor="document-upload"
-                    className="cursor-pointer block"
-                  >
-                    <div className="flex flex-col items-center justify-center py-4">
-                      <svg
-                        className="w-12 h-12 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        ></path>
-                      </svg>
-                      <p className="mt-2 text-sm text-gray-600">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG, PDF, DOC up to 10MB
-                      </p>
-                    </div>
-                  </label>
-                </div>
-                <ErrorMessage
-                  name="documents"
-                  component="div"
-                  className="text-red-600"
-                />
-              </div>
-
-              {/* Preview Uploaded Images */}
-              {previewImages.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">
-                    Uploaded Documents:
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {previewImages.map((image, index) => (
-                      <div key={index} className="relative">
-                        {image.startsWith("data:image") ? (
-                          <img
-                            src={image}
-                            alt={`Preview ${index}`}
-                            className="h-24 w-24 object-cover rounded border"
-                          />
-                        ) : (
-                          <div className="h-24 w-24 bg-gray-100 flex items-center justify-center rounded border">
-                            <span className="text-xs text-gray-500">
-                              Document {index + 1}
-                            </span>
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index, setFieldValue)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="flex justify-end mt-4">
               <button
                 type="submit"
                 className="custom_black_button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isAdding || isUpdating}
               >
-                {isSubmitting ? (
+                {isSubmitting || isAdding || isUpdating ? (
                   <LoadingIcon
                     icon="tail-spin"
                     color="white"

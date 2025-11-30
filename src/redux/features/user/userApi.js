@@ -17,7 +17,7 @@ export const userApi = baseApi.injectEndpoints({
     // CREATE user
     addUser: builder.mutation({
       query: (data) => ({
-        url: "/user",
+        url: "/users/create-user",
         method: "POST",
         body: data,
       }),
@@ -25,9 +25,9 @@ export const userApi = baseApi.injectEndpoints({
     }),
 
     // UPDATE user
-    updateUser: builder.mutation({
+    updateUserById: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/user/${id}`,
+        url: `/users/${id}`,
         method: "PATCH",
         body: data,
       }),
@@ -37,7 +37,7 @@ export const userApi = baseApi.injectEndpoints({
     // DELETE user
     deleteUser: builder.mutation({
       query: (id) => ({
-        url: `/user/${id}`,
+        url: `/users/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["User"],
@@ -51,6 +51,6 @@ export const {
   useGetAllUsersQuery,
   useGetUserByIdQuery,
   useAddUserMutation,
-  useUpdateUserMutation,
+  useUpdateUserByIdMutation,
   useDeleteUserMutation,
 } = userApi;

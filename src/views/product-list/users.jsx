@@ -30,7 +30,7 @@ import useDelete from "../../hooks/useDelete";
 import useFetch from "../../hooks/useFetch";
 import { calculateAge } from "../../utils/helper";
 import ChangePasswordModal from "../../components/modals/ChangePasswordModal";
-import { useGetAllUsersQuery } from "../../redux/features/user/userApi";
+import { useGetAllUsersQuery, useDeleteUserMutation } from "../../redux/features/user/userApi";
 
 // Toggle Switch Component
 function ToggleSwitch({ isOn, handleToggle }) {
@@ -74,6 +74,7 @@ function Users() {
 
   // Fetch users from API using RTK Query with pagination
   const { data: usersResponse, isLoading, error } = useGetAllUsersQuery(apiQueryParams);
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const usersData = usersResponse?.data || [];
   const paginationMeta = usersResponse?.meta || { totalPage: 1, total: 0 };
 
@@ -141,9 +142,14 @@ function Users() {
   //   }
   // };
 
-  const handleDelete = (id) => {
-    toast.success("User deleted successfully (dummy mode)");
-    setDeleteConfirmationModal(false);
+  const handleDelete = async (id) => {
+    try {
+      await deleteUser(id).unwrap();
+      toast.success("User deleted successfully");
+      setDeleteConfirmationModal(false);
+    } catch (error) {
+      toast.error(error?.data?.message || "Something went wrong");
+    }
   };
 
   // const handleReportDownload = async () => {
