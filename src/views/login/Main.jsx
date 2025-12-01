@@ -10,16 +10,23 @@ import toast from "react-hot-toast";
 import { LoadingIcon } from "../../base-components";
 import LOGO from "./../../assets/logo.svg";
 import { useLoginMutation } from "../../redux/features/auth/authApi";
+import { useGetProfileQuery } from "../../redux/features/profile/profileApi";
 import { unwrapResult } from "@reduxjs/toolkit";
 
 function Main() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [login, { isLoading, isError, error }] = useLoginMutation();
+  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+  });
+
+  // Fetch profile after successful login
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useGetProfileQuery(undefined, {
+    skip: !shouldFetchProfile,
   });
 
   const handleInputChange = (e) => {
@@ -37,6 +44,37 @@ function Main() {
       toast.error(error?.data?.message || "An unknown error occurred.");
     }
   }, [isError, error]);
+
+  // Handle profile data when it's fetched
+  useEffect(() => {
+    if (profileData && shouldFetchProfile) {
+      console.log("Profile Data:", profileData);
+      const userData = profileData?.data;
+
+      if (userData) {
+        // Update Redux with complete user data including role
+        dispatch(
+          setUser({
+            user: userData,
+            accessToken: localStorage.getItem("token"),
+            refreshToken: localStorage.getItem("refreshToken"),
+          })
+        );
+        toast.success("Login successful!");
+        navigate("/dashboard");
+        setShouldFetchProfile(false);
+      }
+    }
+  }, [profileData, shouldFetchProfile, dispatch, navigate]);
+
+  // Handle profile fetch error
+  useEffect(() => {
+    if (profileError && shouldFetchProfile) {
+      console.error("Profile fetch failed:", profileError);
+      toast.error("Failed to fetch user profile. Please try again.");
+      setShouldFetchProfile(false);
+    }
+  }, [profileError, shouldFetchProfile]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -57,19 +95,17 @@ function Main() {
         result?.data?.token ||
         result?.token;
 
-      const user = result?.data?.user || result?.user;
-
       console.log("Parsed Token:", accessToken);
 
       if (accessToken) {
-        dispatch(
-          setUser({
-            user: user,
-            accessToken: accessToken,
-          })
-        );
-        toast.success("Login successful!");
-        navigate("/dashboard");
+        // Store token in localStorage
+        localStorage.setItem("token", accessToken);
+        if (result?.data?.refreshToken || result?.refreshToken) {
+          localStorage.setItem("refreshToken", result?.data?.refreshToken || result?.refreshToken);
+        }
+
+        // Trigger profile fetch
+        setShouldFetchProfile(true);
       } else {
         console.error("Login failed: No access token found in response", result);
         toast.error("Login failed: Invalid server response");
@@ -152,11 +188,11 @@ function Main() {
                   </div>
                   <div className="intro-x mt-5 xl:mt-8 text-center xl:text-left">
                     <button
-                      disabled={isLoading}
+                      disabled={isLoading || isProfileLoading}
                       type="submit"
                       className="btn btn-primary py-3 px-4 w-full xl:w-32 xl:mr-3 align-top"
                     >
-                      {isLoading ? (
+                      {isLoading || isProfileLoading ? (
                         <LoadingIcon
                           icon="tail-spin"
                           color="white"

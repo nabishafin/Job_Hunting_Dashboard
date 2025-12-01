@@ -160,6 +160,7 @@ import JobDetails from "../views/product-list/Job-Details";
 import TimeSlots from "../views/product-list/TimeSlots";
 import AddTimeSlot from "../views/settings/Add-TimSlots";
 import Payments from "../views/product-list/CourierPayments";
+import AllAdmin from "../views/all-admin/Main";
 
 function Router() {
   const routes = [
@@ -180,6 +181,10 @@ function Router() {
           path: "/add-ingredients",
           // element: <DashboardOverview4 />,
           element: <Settings />,
+        },
+        {
+          path: "/all-admin",
+          element: <AllAdmin />,
         },
         {
           path: "/add-coupon",

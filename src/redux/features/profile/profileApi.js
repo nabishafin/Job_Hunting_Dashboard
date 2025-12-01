@@ -5,7 +5,7 @@ import { baseApi } from "../../api/baseApi";
 export const profileApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
 
-        // GET Profile (e.g. /users/me)
+        // GET Profile - fetches current authenticated user
         getProfile: builder.query({
             query: () => ({
                 url: "/users/me",

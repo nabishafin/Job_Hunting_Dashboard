@@ -239,11 +239,18 @@ const sideMenu = atom({
         icon: "Users",
         pathname: "/users",
         title: "Users",
+        adminOnly: true,
       },
       {
         icon: "Users",
         pathname: "/couriers",
         title: "Couriers",
+      },
+      {
+        icon: "Shield",
+        pathname: "/all-admin",
+        title: "All Admin",
+        superAdminOnly: true, // Only show for superAdmin role
       },
       {
         icon: "Trello",
@@ -318,8 +325,8 @@ const sideMenu = atom({
       //   icon: "MoreHorizontal",
       //   title: "Static Pages",
       //   subMenu: [
-         
-         
+
+
       //   ],
       // },
       {
@@ -342,7 +349,7 @@ const sideMenu = atom({
             pathname: "/testimonials",
             title: "Testimonials",
           },
-           {
+          {
             icon: "FileText",
             pathname: "/faq",
             title: "FAQ",

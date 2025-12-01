@@ -12,8 +12,8 @@ import MobileMenu from "@/components/mobile-menu/Main";
 import MainColorSwitcher from "@/components/main-color-switcher/Main";
 import DarkModeSwitcher from "@/components/dark-mode-switcher/Main";
 import SideMenuTooltip from "@/components/side-menu-tooltip/Main";
-import { useSelector , useDispatch} from "react-redux";
-import { selectAccessToken, selectIsAuthenticated, selectUser,clearUser } from "../../stores/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectAccessToken, selectIsAuthenticated, selectUser, selectUserRole, clearUser } from "../../stores/userSlice";
 
 function Main() {
   const navigate = useNavigate();
@@ -21,12 +21,30 @@ function Main() {
   const location = useLocation();
   const [formattedMenu, setFormattedMenu] = useState([]);
   const sideMenuStore = useRecoilValue(useSideMenuStore);
-  const sideMenu = () => nestedMenu($h.toRaw(sideMenuStore.menu), location);
+  const user = useSelector(selectUser);
+  const userRole = useSelector(selectUserRole); // Get user role from Redux
+
+  const sideMenu = () => {
+    const menu = $h.toRaw(sideMenuStore.menu);
+    const filteredMenu = menu.filter(item => {
+      // Filter for superAdmin-only items
+      if (item.superAdminOnly) {
+        return userRole === "superAdmin";
+      }
+      // Filter for admin-only items (both admin and superAdmin can see)
+      if (item.adminOnly) {
+        return userRole === "admin" || userRole === "superAdmin";
+      }
+      // Show all other items to everyone
+      return true;
+    });
+    return nestedMenu(filteredMenu, location);
+  };
 
   useEffect(() => {
     dom("body").removeClass("error-page").removeClass("login").addClass("main");
     setFormattedMenu(sideMenu());
-  }, [sideMenuStore, location.pathname]);
+  }, [sideMenuStore, location.pathname, userRole]); // Add userRole to dependencies
 
 
 
