@@ -167,7 +167,7 @@ function Router() {
       path: "/",
       element: (
         // <ProtectedRoute>
-          <SideMenu />
+        <SideMenu />
         // </ProtectedRoute>
       ),
       children: [
@@ -211,15 +211,15 @@ function Router() {
           path: "/reviews",
           element: <Reviews />,
         },
-         {
+        {
           path: "/add-testimonial",
           element: <AddTestimonial />,
         },
-         {
+        {
           path: "/add-timeslots",
           element: <AddTimeSlot />,
         },
-         {
+        {
           path: "/time-slots",
           element: <TimeSlots />,
         },
@@ -245,7 +245,7 @@ function Router() {
           path: "/add-blog",
           element: <AddBlog />,
         },
-         {
+        {
           path: "/website-settings",
           element: <WebsiteSettings />,
         },
@@ -415,7 +415,7 @@ function Router() {
         },
         {
           path: "manage-promotion",
-          element: <ManagePromotion />, 
+          element: <ManagePromotion />,
         },
         {
           path: "recipe-analytics",
@@ -1327,7 +1327,7 @@ function Router() {
       path: "/register",
       element: <Register />,
     },
-    
+
     {
       path: "/error-page",
       element: <ErrorPage />,
