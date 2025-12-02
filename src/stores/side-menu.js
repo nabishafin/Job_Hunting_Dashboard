@@ -239,7 +239,6 @@ const sideMenu = atom({
         icon: "Users",
         pathname: "/users",
         title: "Users",
-        adminOnly: true,
       },
       {
         icon: "Users",

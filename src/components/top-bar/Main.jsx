@@ -15,20 +15,30 @@ import { faker as $f } from "@/utils";
 import * as $_ from "lodash";
 import classnames from "classnames";
 import PropTypes from "prop-types";
-import { useDispatch } from "react-redux";
-import { clearUser } from "../../stores/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { clearUser, selectUser, selectUserRole } from "../../stores/userSlice";
 import LOGO from "../../assets/logo.svg";
 
 function Main(props) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector(selectUser);
+  const userRole = useSelector(selectUserRole);
   const [searchDropdown, setSearchDropdown] = useState(false);
+
   const showSearchDropdown = () => {
     setSearchDropdown(true);
   };
   const hideSearchDropdown = () => {
     setSearchDropdown(false);
   };
+
+  // Get user display info
+  const userName = user?.name
+    ? `${user.name.firstName || ''} ${user.name.lastName || ''}`.trim()
+    : 'Admin User';
+  const userEmail = user?.email || 'admin@example.com';
+  const displayRole = userRole === 'superAdmin' ? 'Super Admin' : userRole === 'admin' ? 'Admin' : 'User';
 
   const handleLogout = () => {
     dispatch(clearUser());
@@ -79,16 +89,17 @@ function Main(props) {
               className="w-8 h-8 rounded-full overflow-hidden shadow-lg image-fit zoom-in"
             >
               <img
-                alt="Admin User"
-                src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff&size=128"
+                alt={userName}
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6366f1&color=fff&size=128`}
                 className="w-full h-full object-cover"
               />
             </DropdownToggle>
             <DropdownMenu className="w-56">
               <DropdownContent className="bg-primary/80 before:block before:absolute before:bg-black before:inset-0 before:rounded-md before:z-[-1] text-white">
                 <DropdownHeader className="!font-normal">
-                  <div className="font-medium">Admin User</div>
-                  <div className="text-xs text-white/70 mt-0.5">admin@example.com</div>
+                  <div className="font-medium">{userName}</div>
+                  <div className="text-xs text-white/70 mt-0.5">{userEmail}</div>
+                  <div className="text-xs text-white/60 mt-1 font-semibold">{displayRole}</div>
                 </DropdownHeader>
                 <DropdownDivider className="border-white/[0.08]" />
                 <DropdownItem

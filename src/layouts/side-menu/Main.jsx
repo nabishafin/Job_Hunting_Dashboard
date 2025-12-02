@@ -26,14 +26,16 @@ function Main() {
 
   const sideMenu = () => {
     const menu = $h.toRaw(sideMenuStore.menu);
+    const normalizedRole = userRole?.toLowerCase()?.trim();
+
     const filteredMenu = menu.filter(item => {
       // Filter for superAdmin-only items
       if (item.superAdminOnly) {
-        return userRole === "superAdmin";
+        return normalizedRole === "superadmin";
       }
       // Filter for admin-only items (both admin and superAdmin can see)
       if (item.adminOnly) {
-        return userRole === "admin" || userRole === "superAdmin";
+        return normalizedRole === "admin" || normalizedRole === "superadmin";
       }
       // Show all other items to everyone
       return true;
