@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { LoadingIcon } from "../../base-components";
-import { REGISTER_USER, UPDATE_USER } from "../../constants";
-import httpRequest from "../../axios";
-import { selectAccessToken } from "../../stores/userSlice";
-import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import useUnauthenticate from "../../hooks/handle-unauthenticated";
 import { Lucide } from "../../base-components";
+import { useCreateBlogMutation, useUpdateBlogMutation } from "../../redux/features/blog/blogApi";
 
 const AddBlog = () => {
-  const handleUnAuthenticate = useUnauthenticate();
-  const accessToken = useSelector(selectAccessToken);
   const location = useLocation();
   const userData = location.state?.data;
   const [isEdit, setIsEdit] = useState(false);
   const navigate = useNavigate();
+  const [preview, setPreview] = useState(null);
+
+  // RTK Query mutations
+  const [createBlog, { isLoading: isAdding }] = useCreateBlogMutation();
+  const [updateBlog, { isLoading: isUpdating }] = useUpdateBlogMutation();
 
   useEffect(() => {
     if (userData) {
@@ -31,7 +30,6 @@ const AddBlog = () => {
     status: userData?.status || 1,
     description: userData?.description || "",
     image: userData?.image || null,
-    isEdit: userData ? true : false,
   };
 
   const validationSchema = Yup.object({
@@ -43,56 +41,60 @@ const AddBlog = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const url = isEdit
-        ? `/admin/edit-blog/${userData._id}`
-        : "/admin/add-blog";
-      const method = isEdit ? httpRequest.post : httpRequest.post;
-
       const formData = new FormData();
 
-      // Append non-empty fields to formData
-      Object.keys(values).forEach((key) => {
-        if (
-          values[key] !== "" &&
-          values[key] !== null &&
-          values[key] !== undefined
-        ) {
-          formData.append(key, values[key]);
-        }
-      });
+      // Create data object with title and description (as shown in Postman)
+      const blogData = {
+        title: values.title,
+        description: values.description,
+      };
 
-      // console.log(formData, "formData");
-      // return;
+      // Append the data as JSON string in "data" field
+      formData.append("data", JSON.stringify(blogData));
 
-      const response = await method(url, formData, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      if (response.status === 200 || response.status === 201) {
-        toast.success(
-          response?.data?.message || "Blog details saved successfully."
-        );
-        navigate("/blogs");
-      } else {
-        toast.error("Something went wrong.");
+      // Only append image if it's a File object (new upload)
+      // API expects "file" not "image"
+      if (values.image && values.image instanceof File) {
+        formData.append("file", values.image);
       }
+
+      // Debug: Log what we're sending
+      console.log("=== Blog Form Submission ===");
+      console.log("Blog Data:", blogData);
+      console.log("Image File:", values.image);
+      console.log("FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ':', pair[1]);
+      }
+
+      let response;
+      if (isEdit) {
+        // Update existing blog
+        response = await updateBlog({
+          id: userData._id,
+          data: formData
+        }).unwrap();
+      } else {
+        // Add new blog
+        response = await createBlog(formData).unwrap();
+      }
+
+      toast.success(
+        response?.message || "Blog details saved successfully."
+      );
+      navigate("/blogs");
     } catch (error) {
       toast.error(
-        error?.response?.data?.message || "An unknown error occurred."
+        error?.data?.message || "An unknown error occurred."
       );
-      console.error("Error:", error?.response?.data);
-
-      if (error?.response?.status === 401) {
-        handleUnAuthenticate();
-      }
+      console.error("=== Blog Submission Error ===");
+      console.error("Error:", error);
+      console.error("Error data:", error?.data);
+      console.error("Error message:", error?.data?.message);
     } finally {
       setSubmitting(false);
     }
   };
-   const [preview, setPreview] = useState(null);
 
   return (
     <div className="p-4 flex-1 rounded-lg overflow-hidden">
@@ -134,7 +136,7 @@ const AddBlog = () => {
                   />
                 </div>
 
-                <div className="w-full">
+                {/* <div className="w-full">
                   <p>Status</p>
                   <Field
                     as="select"
@@ -149,7 +151,7 @@ const AddBlog = () => {
                     component="div"
                     className="text-red-600"
                   />
-                </div>
+                </div> */}
               </div>
 
               <div className="w-full mt-4">
@@ -169,27 +171,27 @@ const AddBlog = () => {
 
               <div className="w-full mt-4">
                 <p>Image</p>
-               <input
-        type="file"
-        name="image"
-        accept="image/*"
-        onChange={(event) => {
-          const file = event.currentTarget.files[0];
+                <input
+                  type="file"
+                  name="image"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files[0];
 
-          if (file) {
-            // Set the binary File object for API
-            setFieldValue("image", file);
+                    if (file) {
+                      // Set the binary File object for API
+                      setFieldValue("image", file);
 
-            // Read as base64 for preview only
-            const reader = new FileReader();
-            reader.onload = () => {
-              setPreview(reader.result); // base64 preview
-            };
-            reader.readAsDataURL(file); // do not send this to backend
-          }
-        }}
-        className="mt-2"
-      />
+                      // Read as base64 for preview only
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setPreview(reader.result); // base64 preview
+                      };
+                      reader.readAsDataURL(file); // do not send this to backend
+                    }
+                  }}
+                  className="mt-2"
+                />
 
                 <ErrorMessage
                   name="image"
@@ -209,9 +211,9 @@ const AddBlog = () => {
               <button
                 type="submit"
                 className="custom_black_button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isAdding || isUpdating}
               >
-                {isSubmitting ? (
+                {isSubmitting || isAdding || isUpdating ? (
                   <LoadingIcon
                     icon="tail-spin"
                     color="white"
