@@ -281,6 +281,7 @@ function Jobs() {
   const [filters, setFilters] = useState(initialFilters);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [editingPrices, setEditingPrices] = useState({}); // Track price edits
 
   // Delete mutation
   const [deleteJob, { isLoading: isDeleting }] = useDeleteJobMutation();
@@ -296,6 +297,58 @@ function Jobs() {
     } catch (error) {
       console.error("Update error:", error);
       toast.error(error?.data?.message || "Failed to update job status");
+    }
+  };
+
+  // Handle price change (local state only)
+  const handlePriceChange = (jobId, value) => {
+    setEditingPrices(prev => ({
+      ...prev,
+      [jobId]: value
+    }));
+  };
+
+  // Save price to API (on blur or Enter)
+  const handlePriceSave = async (jobId, job) => {
+    const newPrice = editingPrices[jobId];
+
+    // If no edit or same value, don't update
+    if (newPrice === undefined || parseFloat(newPrice) === parseFloat(job.courierPrice || 0)) {
+      return;
+    }
+
+    // Prevent duplicate saves
+    if (editingPrices[`${jobId}_saving`]) {
+      return;
+    }
+
+    try {
+      // Mark as saving
+      setEditingPrices(prev => ({ ...prev, [`${jobId}_saving`]: true }));
+
+      await updateJob({
+        id: jobId,
+        updatedData: { courierPrice: parseFloat(newPrice) || 0 }
+      }).unwrap();
+
+      toast.success("Price updated successfully");
+
+      // Clear editing state and saving flag
+      setEditingPrices(prev => {
+        const newState = { ...prev };
+        delete newState[jobId];
+        delete newState[`${jobId}_saving`];
+        return newState;
+      });
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error(error?.data?.message || "Failed to update price");
+      // Clear saving flag on error
+      setEditingPrices(prev => {
+        const newState = { ...prev };
+        delete newState[`${jobId}_saving`];
+        return newState;
+      });
     }
   };
 
@@ -437,6 +490,7 @@ function Jobs() {
                   <th className="text-left whitespace-nowrap">Delivery Date</th>
                   <th className="text-left whitespace-nowrap">Created Date</th>
                   <th className="text-left whitespace-nowrap">Approval</th>
+                  <th className="text-left whitespace-nowrap">Price</th>
                   <th className="text-left whitespace-nowrap">Status</th>
                   <th className="text-center whitespace-nowrap">Action</th>
                 </tr>
@@ -463,6 +517,24 @@ function Jobs() {
                           onChange={() => handleApprovalChange(job._id, job.adminApproved)}
                         />
                       </div>
+                    </td>
+                    <td className="text-left whitespace-nowrap w-40">
+                      <input
+                        type="number"
+                        className="form-control w-24"
+                        value={editingPrices[job._id] !== undefined ? editingPrices[job._id] : (job.courierPrice || 0)}
+                        onChange={(e) => handlePriceChange(job._id, e.target.value)}
+                        onBlur={() => handlePriceSave(job._id, job)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handlePriceSave(job._id, job);
+                            e.target.blur();
+                          }
+                        }}
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
                     </td>
                     <td className="text-left whitespace-nowrap">
                       <div
