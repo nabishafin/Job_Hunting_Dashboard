@@ -3,7 +3,7 @@ import React from 'react';
 const ProgressBar = ({ value }) => {
   return (
     <div
-      className="flex h-3 bg-gray-200 rounded-full overflow-hidden dark:[#ccc] m-auto w-[80%]"
+      className="flex h-3 bg-gray-200 rounded-full overflow-hidden dark:[#ccc] m-auto w-[80%] "
       role="progressbar"
       aria-valuenow={value}
       aria-valuemin="0"
