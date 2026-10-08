@@ -21,7 +21,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-config.bat
 
 # Environment files (re-added after malware removal)
 .env
